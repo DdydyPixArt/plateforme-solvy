@@ -1,0 +1,138 @@
+Crée une maquette fonctionnelle web pour un logiciel bancaire appelé SOLVY.
+
+Contexte :
+SOLVY est une plateforme d’aide à la décision pour une banque. Elle permet aux conseillers bancaires et aux analystes risque de centraliser les données d’un client, vérifier la complétude d’un dossier de crédit, calculer un score de solvabilité, afficher les indicateurs financiers, puis aider à la décision : accord, refus ou accord sous conditions.
+
+Style visuel :
+Je veux une interface réaliste, moderne, professionnelle, comme un vrai logiciel bancaire premium / banque de luxe.
+Utilise une palette élégante :
+- noir profond
+- blanc / gris très clair
+- doré / jaune champagne
+- touches vertes pour les bons statuts
+- touches rouges/orangées pour les alertes
+Design sobre, crédible, pas trop flashy.
+Interface responsive, propre, avec cartes, tableaux, icônes, boutons, badges de statut.
+
+Technologies :
+Crée une application web fonctionnelle en React.
+Utilise des données fictives mais réalistes.
+La maquette doit être navigable, même sans vraie base de données.
+Le code doit être propre, organisé et facile à modifier.
+
+Écrans attendus :
+
+1. Page d’authentification
+- Logo SOLVY
+- Slogan : “Plateforme d’aide à la décision – Solvabilité client”
+- Formulaire email + mot de passe
+- Bouton “Se connecter”
+- Design bancaire premium
+- Possibilité de choisir un profil fictif : Conseiller bancaire / Analyste risque / Administrateur SI
+
+2. Dashboard conseiller bancaire
+Objectif : permettre au conseiller de suivre les demandes de crédit.
+Afficher :
+- nombre de dossiers en cours
+- dossiers incomplets
+- dossiers validés
+- dossiers nécessitant une action
+- liste des derniers dossiers clients
+- statut du dossier : incomplet, en analyse, scoring calculé, décision rendue, archivé
+- bouton “Créer une nouvelle demande”
+- bouton “Voir dossier”
+
+3. Création / saisie d’un dossier client
+Formulaire en plusieurs sections :
+- identité client : nom, prénom, date de naissance, adresse, situation familiale, personnes à charge
+- situation professionnelle : statut professionnel, ancienneté emploi, secteur d’activité
+- revenus et charges : revenus nets mensuels, autres revenus, charges fixes, crédits en cours
+- demande de crédit : montant demandé, durée, objet du crédit, apport personnel, garant, valeur de l’actif financé
+- documents à fournir : pièce d’identité, justificatif de domicile, bulletins de paie, avis d’imposition, relevés de compte, IBAN
+Ajouter des statuts de complétude : fourni / manquant / à vérifier.
+
+4. Fiche dossier client consolidée
+Afficher toutes les informations importantes du client sous forme de cartes :
+- profil client
+- revenus
+- charges
+- taux d’endettement
+- capacité d’emprunt
+- reste à vivre
+- incidents de paiement
+- statut FICP / FCC
+- statut PPE
+- contrôle LCB-FT
+- pièces justificatives
+- historique du dossier
+
+5. Module de score de solvabilité
+Créer une zone très visuelle avec :
+- un score global sur 1000
+- une jauge en demi-cercle avec graduations, allant du rouge vers l’orange puis vers le vert
+- une flèche indiquant le score du client
+- libellés : Risque élevé / Risque modéré / Risque faible
+- couleur dynamique selon le score
+- exemple : score 742/1000 = risque modéré faible
+Afficher aussi les détails du calcul :
+- taux d’endettement
+- revenus mensuels
+- charges fixes
+- incidents de paiement
+- stabilité professionnelle
+- ancienneté relation client
+- présence de découverts
+- capacité d’emprunt
+- probabilité de défaut estimée
+- recommandation automatique : Accord / Refus / Accord sous conditions
+
+6. Dashboard analyste risque
+Objectif : aider l’analyste à prendre une décision.
+Afficher :
+- dossiers à analyser
+- scores de solvabilité
+- alertes réglementaires
+- contrôles documentaires
+- contrôle fraude
+- cohérence entre les données déclarées et les documents
+- recommandations automatiques
+- bouton “Valider la décision”
+- bouton “Demander des documents complémentaires”
+- zone de commentaire analyste
+- choix de décision : Accord, Refus, Accord sous conditions
+
+7. Page audit et traçabilité
+Afficher un journal des actions :
+- création du dossier
+- ajout de documents
+- contrôles effectués
+- calcul du score
+- décision analyste
+- archivage
+Chaque événement doit avoir une date, un utilisateur, une action et un statut.
+L’objectif est de montrer la conformité, la traçabilité et l’explicabilité.
+
+8. Page administration
+Afficher :
+- gestion des utilisateurs
+- rôles : conseiller, analyste risque, administrateur, conformité
+- habilitations
+- journalisation
+- paramètres de scoring
+- seuils de décision
+Exemples de seuils :
+- score inférieur à 400 : refus recommandé
+- score entre 400 et 700 : analyse humaine obligatoire
+- score supérieur à 700 : accord possible sous réserve de validation humaine
+
+Contraintes fonctionnelles :
+- Aucune vraie donnée bancaire réelle.
+- Utiliser uniquement des données fictives.
+- La maquette doit montrer le fonctionnement métier.
+- L’interface doit être crédible pour une présentation universitaire.
+- Le score ne doit pas être présenté comme une décision automatique finale : il doit être une aide à la décision avec validation humaine obligatoire.
+- Prévoir une logique de conformité : RGPD, sécurité, traçabilité, explicabilité du score.
+
+Je veux une maquette complète, jolie, navigable, avec des données d’exemple déjà intégrées.
+L’interface doit ressembler à un vrai logiciel bancaire professionnel : ajoute une sidebar, des cartes KPI, des tableaux filtrables, des badges de statut, des graphiques, une jauge de score plus premium, et une navigation fluide entre les pages.
+
