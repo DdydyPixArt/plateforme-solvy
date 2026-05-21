@@ -12,6 +12,8 @@ import Score from "@/pages/Score";
 import Analyste from "@/pages/Analyste";
 import Audit from "@/pages/Audit";
 import Admin from "@/pages/Admin";
+import DossiersIncomplets from "@/pages/DossiersIncomplets";
+import ExportPDF from "@/pages/ExportPDF";
 import NotFound from "@/pages/not-found";
 
 const queryClient = new QueryClient();
@@ -45,7 +47,12 @@ function AppRouter() {
     );
   }
 
-  const props = { role: auth.role, userName: auth.userName, userInitials: auth.userInitials, onLogout: handleLogout };
+  const props = {
+    role: auth.role,
+    userName: auth.userName,
+    userInitials: auth.userInitials,
+    onLogout: handleLogout,
+  };
 
   return (
     <Switch>
@@ -53,21 +60,28 @@ function AppRouter() {
       <Route path="/login" component={() => <Login onLogin={handleLogin} />} />
       <Route path="/dashboard" component={() => <Dashboard {...props} />} />
       <Route path="/nouveau-dossier" component={() => <NouveauDossier {...props} />} />
+      <Route path="/mes-dossiers" component={() => <Dashboard {...props} />} />
+      <Route path="/dossiers-incomplets" component={() => <DossiersIncomplets {...props} />} />
+      <Route path="/documents" component={() => <DossiersIncomplets {...props} />} />
+      <Route path="/notifications" component={() => <Dashboard {...props} />} />
       <Route path="/dossier/:id" component={() => <DossierDetail {...props} />} />
       <Route path="/score/:id" component={() => <Score {...props} />} />
+      <Route path="/export/:id" component={() => <ExportPDF {...props} />} />
       <Route path="/analyste" component={() => <Analyste {...props} />} />
+      <Route path="/alertes" component={() => <Analyste {...props} />} />
+      <Route path="/decisions" component={() => <Analyste {...props} />} />
+      <Route path="/historique-analyse" component={() => <Audit {...props} />} />
       <Route path="/audit" component={() => <Audit {...props} />} />
       <Route path="/admin" component={() => <Admin {...props} />} />
+      <Route path="/roles" component={() => <Admin {...props} />} />
+      <Route path="/scoring-params" component={() => <Admin {...props} />} />
+      <Route path="/logs" component={() => <Admin {...props} />} />
       <Route component={NotFound} />
     </Switch>
   );
 }
 
 function App() {
-  useEffect(() => {
-    document.documentElement.classList.add("dark");
-  }, []);
-
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>

@@ -1,0 +1,105 @@
+Très bon premier jet. Améliore maintenant l’application sans tout refaire.
+
+1. Rendre le thème moins sombre :
+- conserver le style banque premium noir/blanc/doré
+- mais ajouter beaucoup plus de blanc et de gris clair
+- garder le noir surtout pour la sidebar, le header ou les accents
+- les pages principales doivent être plus lumineuses, comme un vrai outil bancaire professionnel.
+
+2. Différencier fortement les rôles :
+Chaque profil doit avoir son propre espace, ses propres menus et ses propres droits.
+
+Profil Conseiller bancaire :
+- peut voir ses dossiers clients
+- créer une demande
+- compléter un dossier incomplet
+- ajouter/téléverser des documents manquants
+- consulter le score et la recommandation
+- ne peut pas gérer les utilisateurs
+- ne peut pas modifier les seuils de scoring
+- ne peut pas voir les connexions des administrateurs
+- ne peut pas accéder aux logs système globaux.
+
+Profil Analyste risque :
+- peut voir les dossiers à analyser
+- consulter les pièces justificatives
+- consulter le score détaillé
+- voir les alertes réglementaires
+- demander des documents complémentaires
+- ajouter un commentaire d’analyse
+- prendre une décision : accord, refus, accord sous conditions
+- ne peut pas gérer les utilisateurs ni modifier les rôles.
+
+Profil Administrateur :
+- peut gérer les utilisateurs
+- gérer les rôles et habilitations
+- consulter les logs système
+- modifier les paramètres généraux
+- consulter les journaux d’audit
+- ne doit pas être présenté comme un conseiller métier.
+
+3. Adapter la sidebar selon le rôle :
+Conseiller :
+- Tableau de bord
+- Mes dossiers
+- Nouveau dossier
+- Dossiers incomplets
+- Documents à collecter
+- Notifications
+
+Analyste risque :
+- Tableau de bord risque
+- Dossiers à analyser
+- Scoring
+- Alertes conformité
+- Décisions
+- Historique d’analyse
+
+Administrateur :
+- Tableau de bord admin
+- Utilisateurs
+- Rôles & habilitations
+- Paramètres de scoring
+- Logs système
+- Audit global
+
+4. Ajouter une vraie fonctionnalité de complétion de dossier :
+Quand un dossier est incomplet, afficher une section “Documents manquants”.
+Pour chaque document :
+- nom du document
+- statut : fourni, manquant, à vérifier
+- bouton “Téléverser”
+- bouton “Marquer comme reçu”
+- zone de commentaire
+- barre de progression de complétude du dossier.
+Exemples : pièce d’identité, justificatif de domicile, bulletins de paie, avis d’imposition, relevés bancaires, IBAN.
+
+5. Améliorer le score de solvabilité :
+Créer une jauge semi-circulaire visible et premium :
+- score de 0 à 1000
+- arc rouge à gauche, orange au centre, vert à droite
+- graduations
+- aiguille/flèche qui pointe vers le score
+- libellés : risque élevé, risque modéré, risque faible
+- détails du calcul sous forme de cartes ou barres de progression.
+
+6. Ajouter des éléments qui font “vrai logiciel bancaire” :
+- numéro de dossier
+- identifiant client
+- niveau de confidentialité
+- statut KYC
+- contrôle FICP/FCC
+- contrôle PPE
+- contrôle LCB-FT
+- historique des actions
+- badge “validation humaine requise”
+- date de dernière mise à jour
+- conseiller assigné
+- analyste assigné
+- fil d’activité du dossier.
+
+7. Rendre les écrans plus distincts visuellement :
+Quand je me connecte en conseiller, analyste ou administrateur, je dois immédiatement voir que l’espace est différent.
+Utilise des titres, menus, KPIs et actions différentes selon le rôle.
+
+Ne supprime pas les fonctionnalités existantes. Améliore l’application actuelle.

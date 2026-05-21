@@ -40,6 +40,12 @@
   --color-warning: hsl(var(--warning));
   --color-warning-foreground: hsl(var(--warning-foreground));
 
+  --color-sidebar: hsl(var(--sidebar));
+  --color-sidebar-foreground: hsl(var(--sidebar-foreground));
+  --color-sidebar-border: hsl(var(--sidebar-border));
+  --color-sidebar-accent: hsl(var(--sidebar-accent));
+  --color-sidebar-accent-foreground: hsl(var(--sidebar-accent-foreground));
+
   --font-sans: 'Inter', sans-serif;
   --font-serif: Georgia, serif;
   --font-mono: Menlo, monospace;
@@ -50,54 +56,59 @@
   --radius-xl: calc(var(--radius) + 4px);
 }
 
-:root, .dark {
-  /* Enforce Dark Mode for Solvy */
-  --background: 216 20% 5%; /* #0a0c0f */
-  --foreground: 226 24% 93%; /* #e8eaf0 */
+:root {
+  /* ── Main content area: light/pro banking ── */
+  --background: 220 20% 96%;        /* #f1f3f8 — very light blue-gray */
+  --foreground: 220 25% 14%;        /* #1c2033 — near-black */
 
-  --card: 225 18% 9%; /* #111318 */
-  --card-foreground: 226 24% 93%;
-  --card-border: 216 20% 20%; /* subtle border */
+  --card: 0 0% 100%;                /* pure white cards */
+  --card-foreground: 220 25% 14%;
+  --card-border: 220 15% 88%;
 
-  --popover: 225 18% 9%;
-  --popover-foreground: 226 24% 93%;
-  --popover-border: 216 20% 20%;
+  --popover: 0 0% 100%;
+  --popover-foreground: 220 25% 14%;
+  --popover-border: 220 15% 88%;
 
-  --primary: 43 57% 54%; /* #c9a84c - Gold */
-  --primary-foreground: 0 0% 10%;
+  --primary: 43 60% 46%;            /* #c9a84c gold — slightly deeper */
+  --primary-foreground: 0 0% 100%;
 
-  --secondary: 220 10% 15%;
-  --secondary-foreground: 226 24% 93%;
+  --secondary: 220 15% 92%;
+  --secondary-foreground: 220 25% 25%;
 
-  --muted: 216 20% 15%;
-  --muted-foreground: 224 14% 59%; /* #8b92a5 */
+  --muted: 220 15% 92%;
+  --muted-foreground: 220 12% 48%;  /* medium gray */
 
-  --accent: 43 57% 54%; /* Gold */
+  --accent: 43 57% 54%;
   --accent-foreground: 0 0% 10%;
 
-  --destructive: 6 78% 54%; /* #e74c3c */
+  --destructive: 6 78% 54%;
   --destructive-foreground: 0 0% 100%;
 
-  --success: 145 63% 49%; /* #2ecc71 */
+  --success: 145 60% 40%;
   --success-foreground: 0 0% 100%;
 
-  --warning: 28 80% 52%; /* #e67e22 */
+  --warning: 28 80% 48%;
   --warning-foreground: 0 0% 100%;
 
-  --border: 216 20% 20%;
-  --input: 216 20% 20%;
+  --border: 220 15% 88%;
+  --input: 220 15% 88%;
   --ring: 43 57% 54%;
 
-  --sidebar: 216 25% 4%; /* #080a0d */
-  --sidebar-foreground: 226 24% 93%;
-  --sidebar-border: 216 20% 15%;
+  /* ── Sidebar: stays dark/premium ── */
+  --sidebar: 222 30% 10%;           /* #121828 — deep navy */
+  --sidebar-foreground: 220 20% 82%;
+  --sidebar-border: 222 20% 18%;
   --sidebar-primary: 43 57% 54%;
   --sidebar-primary-foreground: 0 0% 10%;
-  --sidebar-accent: 216 20% 12%;
-  --sidebar-accent-foreground: 43 57% 54%;
-  --sidebar-ring: 43 57% 54%;
+  --sidebar-accent: 222 25% 16%;
+  --sidebar-accent-foreground: 43 57% 60%;
 
   --radius: 0.5rem;
+}
+
+/* Keep dark override only for sidebar/login */
+.dark-sidebar {
+  color-scheme: dark;
 }
 
 @layer base {
@@ -108,4 +119,11 @@
   body {
     @apply font-sans antialiased bg-background text-foreground;
   }
+}
+
+/* Print styles for PDF export */
+@media print {
+  .no-print { display: none !important; }
+  .print-only { display: block !important; }
+  body { background: white !important; color: black !important; }
 }
