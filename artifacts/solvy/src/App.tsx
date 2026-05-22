@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Switch, Route, Router as WouterRouter, useLocation } from "wouter";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
@@ -14,15 +14,18 @@ import Audit from "@/pages/Audit";
 import Admin from "@/pages/Admin";
 import DossiersIncomplets from "@/pages/DossiersIncomplets";
 import ExportPDF from "@/pages/ExportPDF";
+import MesDossiers from "@/pages/MesDossiers";
+import DocumentsACollecter from "@/pages/DocumentsACollecter";
+import Notifications from "@/pages/Notifications";
+import AlertesConformite from "@/pages/AlertesConformite";
+import Decisions from "@/pages/Decisions";
+import HistoriqueAnalyse from "@/pages/HistoriqueAnalyse";
+import Roles from "@/pages/Roles";
 import NotFound from "@/pages/not-found";
 
 const queryClient = new QueryClient();
 
-interface AuthState {
-  role: string;
-  userName: string;
-  userInitials: string;
-}
+interface AuthState { role: string; userName: string; userInitials: string; }
 
 function AppRouter() {
   const [auth, setAuth] = useState<AuthState | null>(null);
@@ -31,11 +34,7 @@ function AppRouter() {
   const handleLogin = (role: string, name: string, initials: string) => {
     setAuth({ role, userName: name, userInitials: initials });
   };
-
-  const handleLogout = () => {
-    setAuth(null);
-    setLocation("/login");
-  };
+  const handleLogout = () => { setAuth(null); setLocation("/login"); };
 
   if (!auth) {
     return (
@@ -47,35 +46,42 @@ function AppRouter() {
     );
   }
 
-  const props = {
-    role: auth.role,
-    userName: auth.userName,
-    userInitials: auth.userInitials,
-    onLogout: handleLogout,
-  };
+  const p = { role: auth.role, userName: auth.userName, userInitials: auth.userInitials, onLogout: handleLogout };
 
   return (
     <Switch>
-      <Route path="/" component={() => <Dashboard {...props} />} />
+      <Route path="/" component={() => <Dashboard {...p} />} />
       <Route path="/login" component={() => <Login onLogin={handleLogin} />} />
-      <Route path="/dashboard" component={() => <Dashboard {...props} />} />
-      <Route path="/nouveau-dossier" component={() => <NouveauDossier {...props} />} />
-      <Route path="/mes-dossiers" component={() => <Dashboard {...props} />} />
-      <Route path="/dossiers-incomplets" component={() => <DossiersIncomplets {...props} />} />
-      <Route path="/documents" component={() => <DossiersIncomplets {...props} />} />
-      <Route path="/notifications" component={() => <Dashboard {...props} />} />
-      <Route path="/dossier/:id" component={() => <DossierDetail {...props} />} />
-      <Route path="/score/:id" component={() => <Score {...props} />} />
-      <Route path="/export/:id" component={() => <ExportPDF {...props} />} />
-      <Route path="/analyste" component={() => <Analyste {...props} />} />
-      <Route path="/alertes" component={() => <Analyste {...props} />} />
-      <Route path="/decisions" component={() => <Analyste {...props} />} />
-      <Route path="/historique-analyse" component={() => <Audit {...props} />} />
-      <Route path="/audit" component={() => <Audit {...props} />} />
-      <Route path="/admin" component={() => <Admin {...props} />} />
-      <Route path="/roles" component={() => <Admin {...props} />} />
-      <Route path="/scoring-params" component={() => <Admin {...props} />} />
-      <Route path="/logs" component={() => <Admin {...props} />} />
+      <Route path="/dashboard" component={() => <Dashboard {...p} />} />
+
+      {/* Conseiller */}
+      <Route path="/mes-dossiers" component={() => <MesDossiers {...p} />} />
+      <Route path="/nouveau-dossier" component={() => <NouveauDossier {...p} />} />
+      <Route path="/dossiers-incomplets" component={() => <DossiersIncomplets {...p} />} />
+      <Route path="/documents-a-collecter" component={() => <DocumentsACollecter {...p} />} />
+      <Route path="/documents" component={() => <DocumentsACollecter {...p} />} />
+      <Route path="/notifications" component={() => <Notifications {...p} />} />
+
+      {/* Shared */}
+      <Route path="/dossier/:id" component={() => <DossierDetail {...p} />} />
+      <Route path="/score/:id" component={() => <Score {...p} />} />
+      <Route path="/export/:id" component={() => <ExportPDF {...p} />} />
+      <Route path="/audit" component={() => <Audit {...p} />} />
+
+      {/* Analyste */}
+      <Route path="/analyste" component={() => <Analyste {...p} />} />
+      <Route path="/alertes-conformite" component={() => <AlertesConformite {...p} />} />
+      <Route path="/alertes" component={() => <AlertesConformite {...p} />} />
+      <Route path="/decisions" component={() => <Decisions {...p} />} />
+      <Route path="/historique-analyse" component={() => <HistoriqueAnalyse {...p} />} />
+
+      {/* Admin — URL-based tab routing */}
+      <Route path="/admin" component={() => <Admin {...p} />} />
+      <Route path="/admin/utilisateurs" component={() => <Admin {...p} />} />
+      <Route path="/admin/roles" component={() => <Roles {...p} />} />
+      <Route path="/admin/scoring" component={() => <Admin {...p} />} />
+      <Route path="/admin/logs" component={() => <Admin {...p} />} />
+
       <Route component={NotFound} />
     </Switch>
   );

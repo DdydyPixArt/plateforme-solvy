@@ -3,7 +3,7 @@ import {
   LayoutDashboard, FolderPlus, History, Settings, LogOut, ChevronRight,
   Building2, FolderOpen, AlertCircle, FileCheck, Bell, Shield,
   BarChart3, AlertTriangle, CheckSquare, Clock, Users, KeyRound,
-  FileText, Terminal, BookOpen, ChevronDown
+  FileText, Terminal, BookOpen
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -21,12 +21,6 @@ const roleLabels: Record<string, string> = {
   admin: "Administrateur SI",
 };
 
-const roleColors: Record<string, string> = {
-  conseiller: "text-blue-300",
-  analyste: "text-amber-300",
-  admin: "text-purple-300",
-};
-
 const roleBadgeBg: Record<string, string> = {
   conseiller: "bg-blue-500/15 border-blue-400/25 text-blue-300",
   analyste: "bg-amber-500/15 border-amber-400/25 text-amber-300",
@@ -38,25 +32,25 @@ const conseillerNav = [
   { href: "/mes-dossiers", label: "Mes dossiers", icon: FolderOpen },
   { href: "/nouveau-dossier", label: "Nouveau dossier", icon: FolderPlus },
   { href: "/dossiers-incomplets", label: "Dossiers incomplets", icon: AlertCircle, badge: 1 },
-  { href: "/documents", label: "Documents à collecter", icon: FileCheck },
-  { href: "/notifications", label: "Notifications", icon: Bell },
+  { href: "/documents-a-collecter", label: "Documents à collecter", icon: FileCheck },
+  { href: "/notifications", label: "Notifications", icon: Bell, badge: 3 },
 ];
 
 const analysteNav = [
   { href: "/dashboard", label: "Tableau de bord risque", icon: BarChart3 },
   { href: "/analyste", label: "Dossiers à analyser", icon: FolderOpen, badge: 2 },
   { href: "/score/d1", label: "Scoring", icon: Shield },
-  { href: "/alertes", label: "Alertes conformité", icon: AlertTriangle, badge: 1 },
+  { href: "/alertes-conformite", label: "Alertes conformité", icon: AlertTriangle, badge: 3 },
   { href: "/decisions", label: "Décisions", icon: CheckSquare },
   { href: "/historique-analyse", label: "Historique d'analyse", icon: Clock },
 ];
 
 const adminNav = [
   { href: "/dashboard", label: "Tableau de bord admin", icon: LayoutDashboard },
-  { href: "/admin", label: "Utilisateurs", icon: Users },
-  { href: "/roles", label: "Rôles & habilitations", icon: KeyRound },
-  { href: "/scoring-params", label: "Paramètres scoring", icon: Settings },
-  { href: "/logs", label: "Logs système", icon: Terminal },
+  { href: "/admin/utilisateurs", label: "Utilisateurs", icon: Users },
+  { href: "/admin/roles", label: "Rôles & habilitations", icon: KeyRound },
+  { href: "/admin/scoring", label: "Paramètres scoring", icon: Settings },
+  { href: "/admin/logs", label: "Logs système", icon: Terminal },
   { href: "/audit", label: "Audit global", icon: BookOpen },
 ];
 
@@ -98,12 +92,10 @@ export default function Layout({ children, role = "conseiller", userName = "Soph
           {navItems.map(({ href, label, icon: Icon, badge }: any) => {
             const active = location === href || location.startsWith(href + "/");
             return (
-              <Link key={href} href={href}>
-                <a className={cn(
+              <Link key={href} href={href}
+                className={cn(
                   "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-all duration-150 group relative",
-                  active
-                    ? "font-medium"
-                    : "hover:opacity-100"
+                  active ? "font-medium" : "hover:opacity-100"
                 )}
                 style={active ? {
                   background: "hsl(43 57% 54% / 0.12)",
@@ -112,18 +104,18 @@ export default function Layout({ children, role = "conseiller", userName = "Soph
                   paddingLeft: "10px"
                 } : {
                   color: "hsl(220 15% 60%)",
+                  display: "flex",
                 }}>
-                  <Icon className={cn("w-4 h-4 flex-shrink-0", active ? "" : "opacity-70 group-hover:opacity-100")}
-                    style={{ color: active ? "hsl(43 57% 60%)" : undefined }} />
-                  <span className="flex-1 group-hover:text-white transition-colors">{label}</span>
-                  {badge && (
-                    <span className="w-5 h-5 rounded-full text-[10px] font-bold flex items-center justify-center flex-shrink-0"
-                      style={{ background: "hsl(6 78% 54%)", color: "white" }}>
-                      {badge}
-                    </span>
-                  )}
-                  {active && !badge && <ChevronRight className="w-3 h-3 flex-shrink-0" style={{ color: "hsl(43 57% 54%)" }} />}
-                </a>
+                <Icon className="w-4 h-4 flex-shrink-0 opacity-70 group-hover:opacity-100"
+                  style={{ color: active ? "hsl(43 57% 60%)" : undefined }} />
+                <span className="flex-1 group-hover:text-white transition-colors">{label}</span>
+                {badge && (
+                  <span className="w-5 h-5 rounded-full text-[10px] font-bold flex items-center justify-center flex-shrink-0"
+                    style={{ background: "hsl(6 78% 54%)", color: "white" }}>
+                    {badge}
+                  </span>
+                )}
+                {active && !badge && <ChevronRight className="w-3 h-3 flex-shrink-0" style={{ color: "hsl(43 57% 54%)" }} />}
               </Link>
             );
           })}
@@ -141,7 +133,7 @@ export default function Layout({ children, role = "conseiller", userName = "Soph
               <div className="text-[10px]" style={{ color: "hsl(220 12% 45%)" }}>{roleLabels[role] || role}</div>
             </div>
             <button onClick={onLogout} title="Déconnexion"
-              className="transition-colors hover:opacity-100 opacity-50 hover:text-red-400"
+              className="transition-colors hover:text-red-400 opacity-50 hover:opacity-100"
               style={{ color: "hsl(220 12% 55%)" }}>
               <LogOut className="w-3.5 h-3.5" />
             </button>
@@ -157,8 +149,8 @@ export default function Layout({ children, role = "conseiller", userName = "Soph
   );
 }
 
-export function PageHeader({ title, subtitle, children, roleColor }: {
-  title: string; subtitle?: string; children?: React.ReactNode; roleColor?: string
+export function PageHeader({ title, subtitle, children }: {
+  title: string; subtitle?: string; children?: React.ReactNode;
 }) {
   return (
     <div className="flex items-center justify-between px-8 py-5 flex-shrink-0"

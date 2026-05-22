@@ -1,0 +1,151 @@
+Corrige l’application existante sans tout refaire.
+
+Problème principal :
+Certaines pages de navigation renvoient vers la mauvaise page ou dupliquent une autre page. Chaque menu doit ouvrir une vraie page dédiée, avec un objectif métier clair.
+
+1. Espace Conseiller bancaire
+
+Page “Mes dossiers” :
+Créer une vraie page listant tous les dossiers du conseiller sous forme de tableau professionnel.
+Colonnes :
+- Référence dossier
+- Client
+- Type de crédit
+- Montant demandé
+- Score
+- Statut
+- Complétude documents
+- Dernière mise à jour
+- Action “Voir dossier”
+
+Ajouter :
+- barre de recherche
+- filtres par statut : incomplet, score calculé, en analyse, décision rendue
+- filtre par type de crédit
+- tri par date, montant, score
+- bouton “Nouveau dossier”
+
+Page “Dossiers incomplets” :
+Conserver cette page uniquement pour les dossiers dont la complétude est insuffisante.
+Objectif : suivre les dossiers incomplets dossier par dossier.
+
+Page “Documents à collecter” :
+Ne doit plus être identique à “Dossiers incomplets”.
+Créer une vue centrée sur les documents, pas sur les dossiers.
+Afficher une liste globale des documents manquants à collecter.
+Colonnes :
+- Document attendu
+- Client concerné
+- Référence dossier
+- Priorité
+- Date limite
+- Statut : manquant, reçu, à vérifier
+- Action : téléverser, marquer reçu, commenter
+
+Exemples :
+- Avis d’imposition 2023 — Thomas Moreau — urgent
+- Relevés de compte 3 mois — Martin Dupont — à vérifier
+- Justificatif de domicile — Thomas Moreau — manquant
+
+Page “Notifications” :
+Créer une vraie page de notifications.
+Afficher :
+- documents reçus
+- dossiers incomplets
+- score calculé
+- décision analyste reçue
+- demande de documents complémentaires
+- alerte conformité transmise
+Chaque notification doit avoir une date, un type, un dossier lié et un bouton “Ouvrir”.
+
+2. Espace Analyste risque
+
+Page “Alertes conformité” :
+Ne doit plus renvoyer vers “Dossiers à analyser”.
+Créer une vraie page dédiée aux alertes.
+Afficher uniquement les dossiers avec alertes :
+- FICP positif
+- FCC positif
+- PPE
+- LCB-FT à contrôler
+- incohérence documentaire
+- taux d’endettement supérieur au seuil
+- incidents de paiement
+Chaque alerte doit avoir :
+- niveau : faible, moyen, élevé, critique
+- motif
+- dossier concerné
+- client
+- action : ouvrir dossier, demander complément, marquer comme traitée
+
+Page “Décisions” :
+Créer une vraie page dédiée aux décisions de crédit.
+Afficher :
+- décisions en attente de validation
+- décisions prises récemment
+- décisions accordées
+- refus
+- accords sous conditions
+Colonnes :
+- dossier
+- client
+- score
+- recommandation automatique
+- décision finale
+- analyste
+- date
+- commentaire
+Ajouter filtres par décision et par score.
+
+Page “Historique d’analyse” :
+Afficher un historique chronologique des analyses réalisées :
+- ouverture dossier
+- score consulté
+- alerte consultée
+- commentaire ajouté
+- décision prise
+- documents complémentaires demandés
+
+3. Espace Administrateur
+
+Corriger les liens de navigation :
+Quand je clique sur “Paramètres scoring”, je dois arriver directement sur l’onglet Paramètres Scoring.
+Quand je clique sur “Logs système”, je dois arriver directement sur l’onglet Journalisation système.
+Quand je clique sur “Utilisateurs”, je dois arriver directement sur l’onglet Utilisateurs.
+
+Page “Utilisateurs” :
+Les boutons doivent fonctionner :
+- Ajouter un utilisateur ouvre une modale ou un formulaire
+- Modifier ouvre une modale de modification
+- Désactiver change le statut en inactif
+- Activer change le statut en actif
+
+Page “Rôles & habilitations” :
+Ne doit pas être identique à Utilisateurs.
+Créer une vraie page dédiée aux droits par rôle.
+Afficher une matrice des habilitations :
+Lignes = fonctionnalités
+Colonnes = Conseiller bancaire, Analyste risque, Administrateur SI
+Cases = autorisé / non autorisé
+
+Fonctionnalités à afficher :
+- Créer dossier
+- Modifier dossier client
+- Téléverser documents
+- Consulter score
+- Voir alertes conformité
+- Prendre décision
+- Gérer utilisateurs
+- Modifier seuils scoring
+- Consulter logs système
+- Accéder audit global
+
+4. Corriger le bug des champs de saisie
+Dans le formulaire “Nouveau dossier”, les champs texte ne doivent pas perdre le focus à chaque lettre.
+Je dois pouvoir taper normalement un nom, prénom, adresse, montant, etc.
+Vérifie les composants input, les re-render inutiles, les keys dynamiques et l’état React.
+
+5. Règle générale
+Aucune page du menu ne doit renvoyer vers une autre page par défaut.
+Chaque entrée de menu doit avoir une page spécifique et utile.
+Si une page existe dans la sidebar, elle doit être fonctionnelle ou clairement différente des autres.
