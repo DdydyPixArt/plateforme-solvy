@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useLocation } from "wouter";
 import Layout, { PageHeader } from "@/components/Layout";
 import { mockDossiers, DossierStatus } from "@/data/mockData";
+import { useDossiers } from "@/hooks/useApi";
 import { CheckCircle, XCircle, AlertTriangle, Eye, Filter } from "lucide-react";
 
 interface Props { role: string; userName: string; userInitials: string; onLogout: () => void; }
@@ -26,11 +27,12 @@ export default function Decisions({ role, userName, userInitials, onLogout }: Pr
   const [, setLocation] = useLocation();
   const [decisionFilter, setDecisionFilter] = useState("all");
   const [scoreFilter, setScoreFilter] = useState("all");
+  const { data: allDossiers = mockDossiers } = useDossiers();
 
   const fmt = (n: number) => new Intl.NumberFormat("fr-FR", { style: "currency", currency: "EUR", maximumFractionDigits: 0 }).format(n);
 
-  const enAttente = mockDossiers.filter(d => (d.status === "score_calcule" || d.status === "en_analyse") && !d.decision);
-  const prises = mockDossiers.filter(d => d.decision !== null);
+  const enAttente = allDossiers.filter((d: any) => (d.status === "score_calcule" || d.status === "en_analyse") && !d.decision);
+  const prises = allDossiers.filter((d: any) => d.decision !== null);
 
   const filteredPrises = prises.filter(d => {
     const matchDec = decisionFilter === "all" || d.decision === decisionFilter;

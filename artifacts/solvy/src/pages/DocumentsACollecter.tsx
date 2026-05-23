@@ -1,6 +1,7 @@
 import { useState } from "react";
 import Layout, { PageHeader } from "@/components/Layout";
 import { mockDossiers } from "@/data/mockData";
+import { useDossiers } from "@/hooks/useApi";
 import { CheckCircle, XCircle, AlertTriangle, Upload, MessageSquare, Search, CheckCheck } from "lucide-react";
 
 interface Props { role: string; userName: string; userInitials: string; onLogout: () => void; }
@@ -54,10 +55,9 @@ function buildRows(): DocRow[] {
   return rows;
 }
 
-const initialRows = buildRows();
-
 export default function DocumentsACollecter({ role, userName, userInitials, onLogout }: Props) {
-  const [rows, setRows] = useState<DocRow[]>(initialRows);
+  const { data: liveDossiers = mockDossiers } = useDossiers();
+  const [rows, setRows] = useState<DocRow[]>(() => buildRows());
   const [search, setSearch] = useState("");
   const [statutFilter, setStatutFilter] = useState("all");
   const [prioriteFilter, setPrioriteFilter] = useState("all");

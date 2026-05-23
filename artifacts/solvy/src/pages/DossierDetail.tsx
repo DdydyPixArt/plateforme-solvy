@@ -1,7 +1,9 @@
+import { useState } from "react";
 import { useLocation, useParams } from "wouter";
 import Layout, { PageHeader } from "@/components/Layout";
+import { useDossier, useTransmettreDossier } from "@/hooks/useApi";
 import { mockDossiers, DossierStatus } from "@/data/mockData";
-import { ArrowLeft, TrendingUp, AlertTriangle, CheckCircle, XCircle, Shield, Clock, FileText, User, Gauge, Printer } from "lucide-react";
+import { ArrowLeft, TrendingUp, AlertTriangle, CheckCircle, XCircle, Shield, Clock, FileText, User, Gauge, Printer, Send, Loader2 } from "lucide-react";
 
 interface DossierDetailProps { role: string; userName: string; userInitials: string; onLogout: () => void; }
 
@@ -20,16 +22,51 @@ const docColors = {
 };
 const docLabels = { fourni: "Fourni", manquant: "Manquant", a_verifier: "À vérifier" };
 
+const decisionConf = {
+  accord: { label: "Accord", cls: "text-emerald-700 bg-emerald-50 border-emerald-200" },
+  refus: { label: "Refus", cls: "text-red-700 bg-red-50 border-red-200" },
+  accord_conditions: { label: "Accord sous conditions", cls: "text-amber-700 bg-amber-50 border-amber-200" },
+};
+
 const txt = "hsl(220 25% 14%)";
 const sub = "hsl(220 12% 48%)";
 
 export default function DossierDetail({ role, userName, userInitials, onLogout }: DossierDetailProps) {
   const [, setLocation] = useLocation();
   const params = useParams<{ id: string }>();
-  const dossier = mockDossiers.find(d => d.id === params.id) || mockDossiers[0];
+  const { data: dossier, isLoading } = useDossier(params.id);
+  const transmettreM = useTransmettreDossier();
+  const [transmitting, setTransmitting] = useState(false);
+  const [transmitted, setTransmitted] = useState(false);
+
+  const handleTransmettre = async () => {
+    if (!dossier) return;
+    setTransmitting(true);
+    try {
+      await transmettreM.mutateAsync(dossier.id);
+      setTransmitted(true);
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setTransmitting(false);
+    }
+  };
+
+  if (isLoading || !dossier) {
+    return (
+      <Layout role={role} userName={userName} userInitials={userInitials} onLogout={onLogout}>
+        <div className="flex-1 flex items-center justify-center">
+          <Loader2 className="w-8 h-8 animate-spin text-amber-500" />
+        </div>
+      </Layout>
+    );
+  }
 
   const fmt = (n: number) => new Intl.NumberFormat("fr-FR", { style: "currency", currency: "EUR", maximumFractionDigits: 0 }).format(n);
-  const sc = statusConfig[dossier.status];
+  const sc = statusConfig[dossier.status as DossierStatus] || statusConfig.incomplet;
+
+  const isTransmis = !!(dossier as any).transmisAt || transmitted;
+  const canTransmettre = role === "conseiller" && !isTransmis && dossier.status !== "decision_rendue";
 
   const InfoCard = ({ title, icon: Icon, children }: any) => (
     <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-5">
@@ -65,17 +102,35 @@ export default function DossierDetail({ role, userName, userInitials, onLogout }
 
   return (
     <Layout role={role} userName={userName} userInitials={userInitials} onLogout={onLogout}>
-      <PageHeader title={`Dossier ${dossier.reference}`} subtitle={`${dossier.client.prenom} ${dossier.client.nom} · Conseiller: ${dossier.conseiller}`}>
+      <PageHeader title={`Dossier ${dossier.reference}`} subtitle={`${dossier.client?.prenom} ${dossier.client?.nom} · Conseiller: ${dossier.conseiller}`}>
         <button onClick={() => setLocation("/dashboard")} className="flex items-center gap-2 text-sm font-medium transition-colors hover:opacity-80" style={{ color: sub }}>
           <ArrowLeft className="w-4 h-4" /> Retour
         </button>
         <span className={`text-xs font-semibold px-3 py-1 rounded-full border ${sc.bg} ${sc.border} ${sc.color}`}>{sc.label}</span>
+        {dossier.decision && (decisionConf as any)[dossier.decision] && (
+          <span className={`text-xs font-semibold px-3 py-1 rounded-full border ${(decisionConf as any)[dossier.decision].cls}`}>
+            {(decisionConf as any)[dossier.decision].label}
+          </span>
+        )}
         <ScoreBadge />
         {dossier.score && (
           <button onClick={() => setLocation(`/score/${dossier.id}`)}
             className="flex items-center gap-2 text-sm font-semibold px-4 py-2 rounded-lg border border-amber-200 bg-amber-50 text-amber-700 hover:bg-amber-100 transition-all">
             <Gauge className="w-4 h-4" /> Score
           </button>
+        )}
+        {canTransmettre && (
+          <button onClick={handleTransmettre} disabled={transmitting}
+            className="flex items-center gap-2 text-sm font-semibold px-4 py-2 rounded-lg text-white transition-all hover:opacity-90 disabled:opacity-60"
+            style={{ background: "hsl(220 70% 50%)" }}>
+            {transmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+            Transmettre à l'analyse risque
+          </button>
+        )}
+        {isTransmis && dossier.status !== "decision_rendue" && (
+          <span className="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-full border border-blue-200 bg-blue-50 text-blue-700">
+            <CheckCircle className="w-3.5 h-3.5" /> Transmis à l'analyse
+          </span>
         )}
         <button onClick={() => setLocation(`/export/${dossier.id}`)}
           className="flex items-center gap-2 text-sm font-semibold px-4 py-2 rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50 transition-all">
@@ -108,37 +163,39 @@ export default function DossierDetail({ role, userName, userInitials, onLogout }
                 <div className="w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0"
                   style={{ background: "hsl(43 57% 54% / 0.15)", border: "1px solid hsl(43 57% 54% / 0.3)" }}>
                   <span className="text-lg font-bold" style={{ color: "hsl(43 57% 42%)" }}>
-                    {dossier.client.prenom[0]}{dossier.client.nom[0]}
+                    {dossier.client?.prenom?.[0]}{dossier.client?.nom?.[0]}
                   </span>
                 </div>
                 <div>
-                  <div className="font-semibold" style={{ color: txt }}>{dossier.client.prenom} {dossier.client.nom}</div>
-                  <div className="text-xs" style={{ color: sub }}>Né(e) le {new Date(dossier.client.dateNaissance).toLocaleDateString("fr-FR")}</div>
+                  <div className="font-semibold" style={{ color: txt }}>{dossier.client?.prenom} {dossier.client?.nom}</div>
+                  <div className="text-xs" style={{ color: sub }}>
+                    {dossier.client?.dateNaissance ? `Né(e) le ${new Date(dossier.client.dateNaissance).toLocaleDateString("fr-FR")}` : ""}
+                  </div>
                 </div>
               </div>
-              <Row label="Situation familiale" value={dossier.client.situationFamiliale} />
-              <Row label="Personnes à charge" value={String(dossier.client.personnesCharge)} />
-              <Row label="Adresse" value={`${dossier.client.adresse}, ${dossier.client.codePostal} ${dossier.client.ville}`} />
-              <Row label="Téléphone" value={dossier.client.telephone} />
-              <Row label="Email" value={dossier.client.email} />
+              <Row label="Situation familiale" value={dossier.client?.situationFamiliale || "—"} />
+              <Row label="Personnes à charge" value={String(dossier.client?.personnesCharge ?? "—")} />
+              <Row label="Adresse" value={`${dossier.client?.adresse}, ${dossier.client?.codePostal} ${dossier.client?.ville}`} />
+              <Row label="Téléphone" value={dossier.client?.telephone || "—"} />
+              <Row label="Email" value={dossier.client?.email || "—"} />
             </InfoCard>
 
             <InfoCard title="Situation professionnelle" icon={Shield}>
-              <Row label="Statut" value={dossier.situationPro.statut} />
-              <Row label="Employeur" value={dossier.situationPro.employeur} />
-              <Row label="Poste" value={dossier.situationPro.poste} />
-              <Row label="Secteur" value={dossier.situationPro.secteur} />
-              <Row label="Ancienneté" value={`${dossier.situationPro.anciennete} ans`} />
+              <Row label="Statut" value={dossier.situationPro?.statut || "—"} />
+              <Row label="Employeur" value={dossier.situationPro?.employeur || "—"} />
+              <Row label="Poste" value={dossier.situationPro?.poste || "—"} />
+              <Row label="Secteur" value={dossier.situationPro?.secteur || "—"} />
+              <Row label="Ancienneté" value={`${dossier.situationPro?.anciennete ?? "—"} ans`} />
             </InfoCard>
           </div>
 
           {/* Col 2 */}
           <div className="space-y-4">
             <InfoCard title="Revenus & charges" icon={TrendingUp}>
-              <Row label="Revenus nets" value={fmt(dossier.finances.revenusNets) + "/mois"} color="text-emerald-600" />
-              <Row label="Autres revenus" value={fmt(dossier.finances.autresRevenus) + "/mois"} />
-              <Row label="Charges fixes" value={fmt(dossier.finances.chargesFixes) + "/mois"} color="text-red-600" />
-              <Row label="Crédits en cours" value={fmt(dossier.finances.creditsEnCours) + "/mois"} color="text-red-600" />
+              <Row label="Revenus nets" value={fmt(dossier.finances?.revenusNets || 0) + "/mois"} color="text-emerald-600" />
+              <Row label="Autres revenus" value={fmt(dossier.finances?.autresRevenus || 0) + "/mois"} />
+              <Row label="Charges fixes" value={fmt(dossier.finances?.chargesFixes || 0) + "/mois"} color="text-red-600" />
+              <Row label="Crédits en cours" value={fmt(dossier.finances?.creditsEnCours || 0) + "/mois"} color="text-red-600" />
             </InfoCard>
 
             <div className="grid grid-cols-2 gap-3">
@@ -157,12 +214,12 @@ export default function DossierDetail({ role, userName, userInitials, onLogout }
             </div>
 
             <InfoCard title="Demande de crédit" icon={FileText}>
-              <Row label="Montant demandé" value={<span className="font-bold" style={{ color: "hsl(43 57% 38%)" }}>{fmt(dossier.demande.montant)}</span>} />
-              <Row label="Durée" value={`${dossier.demande.duree} mois (${(dossier.demande.duree / 12).toFixed(0)} ans)`} />
-              <Row label="Objet" value={dossier.demande.objet} />
-              <Row label="Apport personnel" value={fmt(dossier.demande.apport)} />
-              <Row label="Valeur de l'actif" value={fmt(dossier.demande.valeurActif)} />
-              <Row label="Garant" value={dossier.demande.garant ? "Oui" : "Non"} />
+              <Row label="Montant demandé" value={<span className="font-bold" style={{ color: "hsl(43 57% 38%)" }}>{fmt(dossier.demande?.montant || 0)}</span>} />
+              <Row label="Durée" value={`${dossier.demande?.duree} mois (${((dossier.demande?.duree || 0) / 12).toFixed(0)} ans)`} />
+              <Row label="Objet" value={dossier.demande?.objet || "—"} />
+              <Row label="Apport personnel" value={fmt(dossier.demande?.apport || 0)} />
+              <Row label="Valeur de l'actif" value={fmt(dossier.demande?.valeurActif || 0)} />
+              <Row label="Garant" value={dossier.demande?.garant ? "Oui" : "Non"} />
             </InfoCard>
           </div>
 
@@ -170,16 +227,17 @@ export default function DossierDetail({ role, userName, userInitials, onLogout }
           <div className="space-y-4">
             <InfoCard title="Documents justificatifs" icon={FileText}>
               <div className="space-y-2">
-                {dossier.documents.map((doc, i) => {
-                  const { text, bg, icon: Icon } = docColors[doc.statut];
+                {(dossier.documents || []).map((doc: any, i: number) => {
+                  const dc = docColors[doc.statut as keyof typeof docColors] || docColors.manquant;
+                  const Icon = dc.icon;
                   return (
                     <div key={i} className="flex items-center justify-between py-1">
                       <div className="flex items-center gap-2 flex-1 min-w-0 mr-2">
-                        <Icon className={`w-3.5 h-3.5 flex-shrink-0 ${text}`} />
+                        <Icon className={`w-3.5 h-3.5 flex-shrink-0 ${dc.text}`} />
                         <span className="text-xs truncate" style={{ color: txt }}>{doc.nom}</span>
                       </div>
-                      <span className={`flex items-center text-[10px] font-medium px-2 py-0.5 rounded-full border whitespace-nowrap ${bg} ${text}`}>
-                        {docLabels[doc.statut]}
+                      <span className={`flex items-center text-[10px] font-medium px-2 py-0.5 rounded-full border whitespace-nowrap ${dc.bg} ${dc.text}`}>
+                        {docLabels[doc.statut as keyof typeof docLabels] || doc.statut}
                       </span>
                     </div>
                   );
@@ -189,7 +247,7 @@ export default function DossierDetail({ role, userName, userInitials, onLogout }
 
             <InfoCard title="Historique du dossier" icon={Clock}>
               <div className="space-y-3">
-                {dossier.historique.map((ev, i) => (
+                {(dossier.historique || []).map((ev: any, i: number) => (
                   <div key={i} className="relative pl-4">
                     <div className="absolute left-0 top-1.5 w-2 h-2 rounded-full" style={{ background: "hsl(43 57% 54%)", border: "1px solid hsl(43 57% 42%)" }} />
                     {i < dossier.historique.length - 1 && (
@@ -205,7 +263,9 @@ export default function DossierDetail({ role, userName, userInitials, onLogout }
 
             {dossier.analysteCommentaire && (
               <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
-                <div className="text-xs font-semibold text-blue-700 mb-1">Commentaire analyste</div>
+                <div className="text-xs font-semibold text-blue-700 mb-1">Commentaire analyste
+                  {(dossier as any).analysteAssigne && <span className="ml-2 font-normal text-blue-600">— {(dossier as any).analysteAssigne}</span>}
+                </div>
                 <div className="text-xs text-blue-800">{dossier.analysteCommentaire}</div>
               </div>
             )}

@@ -1,7 +1,8 @@
 import { useState, useCallback } from "react";
 import { useLocation } from "wouter";
 import Layout, { PageHeader } from "@/components/Layout";
-import { Check, ChevronRight, ChevronLeft, CheckCircle2, XCircle, AlertCircle } from "lucide-react";
+import { useCreateDossier } from "@/hooks/useApi";
+import { Check, ChevronRight, ChevronLeft, CheckCircle2, XCircle, AlertCircle, Loader2 } from "lucide-react";
 
 interface NouveauDossierProps { role: string; userName: string; userInitials: string; onLogout: () => void; }
 
@@ -38,6 +39,19 @@ const docColors: Record<DocStatut, string> = {
   a_verifier: "text-amber-700 bg-amber-50 border-amber-200",
 };
 
+const typesCredit = [
+  "Crédit immobilier résidence principale",
+  "Crédit immobilier investissement locatif",
+  "Crédit consommation",
+  "Crédit automobile",
+  "Crédit travaux",
+  "Crédit étudiant",
+  "Regroupement de crédits",
+  "Prêt personnel",
+  "Crédit renouvelable",
+  "Crédit professionnel individuel",
+];
+
 const inputCls = "w-full bg-white border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-amber-300 transition-all";
 const labelCls = "text-[10px] uppercase tracking-widest font-semibold mb-1.5 block";
 const selectCls = "w-full bg-white border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-amber-300";
@@ -47,8 +61,9 @@ export default function NouveauDossier({ role, userName, userInitials, onLogout 
   const [currentStep, setCurrentStep] = useState(1);
   const [docs, setDocs] = useState<DocItem[]>(defaultDocs);
   const [submitted, setSubmitted] = useState(false);
+  const [error, setError] = useState("");
+  const createDossier = useCreateDossier();
 
-  // Flat form state — no nested objects to avoid stale closure issues
   const [nom, setNom] = useState("");
   const [prenom, setPrenom] = useState("");
   const [dateNaissance, setDateNaissance] = useState("");
@@ -60,7 +75,8 @@ export default function NouveauDossier({ role, userName, userInitials, onLogout 
   const [statut, setStatut] = useState("CDI");
   const [employeur, setEmployeur] = useState("");
   const [secteur, setSecteur] = useState("Informatique");
-  const [anciennete, setAnciennete] = useState("");
+  const [ancienneteAns, setAncienneteAns] = useState("");
+  const [ancienneteMois, setAncienneteMois] = useState("");
   const [poste, setPoste] = useState("");
   const [revenusNets, setRevenusNets] = useState("");
   const [autresRevenus, setAutresRevenus] = useState("");
@@ -68,7 +84,7 @@ export default function NouveauDossier({ role, userName, userInitials, onLogout 
   const [creditsEnCours, setCreditsEnCours] = useState("");
   const [montant, setMontant] = useState("");
   const [duree, setDuree] = useState("");
-  const [objet, setObjet] = useState("");
+  const [objet, setObjet] = useState(typesCredit[0]);
   const [apport, setApport] = useState("");
   const [garant, setGarant] = useState("Non");
   const [valeurActif, setValeurActif] = useState("");
@@ -81,9 +97,25 @@ export default function NouveauDossier({ role, userName, userInitials, onLogout 
     }));
   }, []);
 
-  const handleSubmit = () => {
-    setSubmitted(true);
-    setTimeout(() => setLocation("/dashboard"), 2000);
+  const handleSubmit = async () => {
+    setError("");
+    try {
+      const anciennete = (Number(ancienneteAns) || 0) + ((Number(ancienneteMois) || 0) / 12);
+      await createDossier.mutateAsync({
+        nom, prenom, dateNaissance, adresse, ville, codePostal,
+        situationFamiliale, personnesCharge,
+        statut, employeur, secteur, anciennete: anciennete.toFixed(2), poste,
+        revenusNets, autresRevenus, chargesFixes, creditsEnCours,
+        montant, duree, objet, apport, garant, valeurActif,
+        conseiller: userName,
+        conseillerEmail: "",
+        documents: docs,
+      });
+      setSubmitted(true);
+      setTimeout(() => setLocation("/mes-dossiers"), 2000);
+    } catch (e: any) {
+      setError(e.message || "Erreur lors de la création");
+    }
   };
 
   if (submitted) {
@@ -94,8 +126,8 @@ export default function NouveauDossier({ role, userName, userInitials, onLogout 
             <div className="w-16 h-16 rounded-full bg-emerald-50 border border-emerald-200 flex items-center justify-center mx-auto mb-4">
               <Check className="w-8 h-8 text-emerald-600" />
             </div>
-            <h2 className="text-xl font-semibold mb-2" style={{ color: txt }}>Dossier soumis avec succès</h2>
-            <p className="text-sm" style={{ color: sub }}>Redirection vers le tableau de bord...</p>
+            <h2 className="text-xl font-semibold mb-2" style={{ color: txt }}>Dossier créé avec succès</h2>
+            <p className="text-sm" style={{ color: sub }}>Redirection vers mes dossiers...</p>
           </div>
         </div>
       </Layout>
@@ -200,8 +232,17 @@ export default function NouveauDossier({ role, userName, userInitials, onLogout 
                     </select>
                   </div>
                   <div>
-                    <label className={labelCls} style={{ color: sub }}>Ancienneté (années)</label>
-                    <input type="number" min="0" className={inputCls} style={{ color: txt }} value={anciennete} onChange={e => setAnciennete(e.target.value)} placeholder="5" />
+                    <label className={labelCls} style={{ color: sub }}>Ancienneté professionnelle</label>
+                    <div className="grid grid-cols-2 gap-2">
+                      <div className="relative">
+                        <input type="number" min="0" className={inputCls} style={{ color: txt }} value={ancienneteAns} onChange={e => setAncienneteAns(e.target.value)} placeholder="0" />
+                        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs pointer-events-none" style={{ color: sub }}>ans</span>
+                      </div>
+                      <div className="relative">
+                        <input type="number" min="0" max="11" className={inputCls} style={{ color: txt }} value={ancienneteMois} onChange={e => setAncienneteMois(e.target.value)} placeholder="0" />
+                        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs pointer-events-none" style={{ color: sub }}>mois</span>
+                      </div>
+                    </div>
                   </div>
                 </div>
                 <div>
@@ -280,8 +321,10 @@ export default function NouveauDossier({ role, userName, userInitials, onLogout 
                   </div>
                 </div>
                 <div>
-                  <label className={labelCls} style={{ color: sub }}>Objet du crédit</label>
-                  <input className={inputCls} style={{ color: txt }} value={objet} onChange={e => setObjet(e.target.value)} placeholder="Ex: Acquisition immobilière – résidence principale" />
+                  <label className={labelCls} style={{ color: sub }}>Type / Objet du crédit</label>
+                  <select className={selectCls} style={{ color: txt }} value={objet} onChange={e => setObjet(e.target.value)}>
+                    {typesCredit.map(t => <option key={t}>{t}</option>)}
+                  </select>
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
@@ -330,6 +373,7 @@ export default function NouveauDossier({ role, userName, userInitials, onLogout 
                   <span className="text-red-500 font-medium">{docs.filter(d => d.statut === "manquant").length} manquants</span>
                   <span className="text-amber-500 font-medium">{docs.filter(d => d.statut === "a_verifier").length} à vérifier</span>
                 </div>
+                {error && <div className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">{error}</div>}
               </div>
             )}
           </div>
@@ -348,10 +392,11 @@ export default function NouveauDossier({ role, userName, userInitials, onLogout 
                 Suivant <ChevronRight className="w-4 h-4" />
               </button>
             ) : (
-              <button onClick={handleSubmit}
-                className="flex items-center gap-2 text-white text-sm font-semibold px-5 py-2.5 rounded-xl transition-all hover:opacity-90"
+              <button onClick={handleSubmit} disabled={createDossier.isPending}
+                className="flex items-center gap-2 text-white text-sm font-semibold px-5 py-2.5 rounded-xl transition-all hover:opacity-90 disabled:opacity-60"
                 style={{ background: "hsl(43 60% 46%)" }}>
-                <Check className="w-4 h-4" /> Soumettre le dossier
+                {createDossier.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
+                Soumettre le dossier
               </button>
             )}
           </div>

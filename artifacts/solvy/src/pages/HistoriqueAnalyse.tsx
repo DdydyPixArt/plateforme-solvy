@@ -1,5 +1,5 @@
 import Layout, { PageHeader } from "@/components/Layout";
-import { mockAuditEntries } from "@/data/mockData";
+
 import { Eye, Shield, MessageSquare, FileText, CheckCircle, AlertTriangle, Clock } from "lucide-react";
 
 interface Props { role: string; userName: string; userInitials: string; onLogout: () => void; }

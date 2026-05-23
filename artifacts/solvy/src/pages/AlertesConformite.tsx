@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useLocation } from "wouter";
 import Layout, { PageHeader } from "@/components/Layout";
 import { mockDossiers } from "@/data/mockData";
+import { useDossiers } from "@/hooks/useApi";
 import { AlertTriangle, XCircle, Shield, Eye, CheckCircle, MessageSquare } from "lucide-react";
 
 interface Props { role: string; userName: string; userInitials: string; onLogout: () => void; }
@@ -44,14 +45,15 @@ function buildAlertes(): Alerte[] {
   return list;
 }
 
-const initialAlertes = buildAlertes();
-
 export default function AlertesConformite({ role, userName, userInitials, onLogout }: Props) {
   const [, setLocation] = useLocation();
-  const [alertes, setAlertes] = useState<Alerte[]>(initialAlertes);
+  const { data: liveDossiers = mockDossiers } = useDossiers();
+  const [alertes, setAlertes] = useState<Alerte[]>(() => buildAlertes());
   const [niveauFilter, setNiveauFilter] = useState("all");
   const [showTraitees, setShowTraitees] = useState(false);
   const [expanded, setExpanded] = useState<string | null>(null);
+
+  const liveAlertes = [...alertes, ...buildAlertes().filter(a => !alertes.find(e => e.id === a.id) && liveDossiers.find((d: any) => d.id === a.dossierId))];
 
   const markTraitee = (id: string) => setAlertes(as => as.map(a => a.id === id ? { ...a, traitee: true } : a));
 

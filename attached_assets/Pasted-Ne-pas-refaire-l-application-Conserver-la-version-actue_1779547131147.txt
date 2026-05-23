@@ -1,0 +1,272 @@
+Ne pas refaire l’application.
+Conserver la version actuelle de SOLVY, son design principal, sa navigation, ses données existantes et ses espaces Conseiller / Analyste risque / Administrateur SI.
+
+Objectif : améliorer la version actuelle avec des ajouts fonctionnels et graphiques.
+
+1. Ajouter des graphiques sur les dashboards
+
+Ajouter des graphiques professionnels, visibles et utiles.
+
+Dashboard Conseiller bancaire :
+- un Gauge Chart / Semi-Circular Gauge Chart with Needle pour le score moyen du portefeuille
+- un histogramme des dossiers par statut
+- un camembert de répartition des types de crédit
+- une courbe d’évolution mensuelle des dossiers créés / transmis / décidés
+
+Dashboard Analyste risque :
+- un Gauge Chart / Semi-Circular Gauge Chart with Needle pour le risque moyen des dossiers à analyser
+- un histogramme des scores de solvabilité par tranche : faible, moyen, élevé
+- un graphique des décisions : accord, refus, accord sous conditions
+- un graphique des alertes conformité par type : FICP, FCC, PPE, LCB-FT, incidents, endettement
+
+Dashboard Administrateur :
+- un graphique des connexions utilisateurs
+- un graphique d’activité système
+- un camembert de répartition des rôles
+- un graphique des actions d’audit par type
+
+Le Gauge Chart doit être un vrai demi-cercle avec :
+- échelle 0 à 1000
+- zones rouge, orange, verte
+- aiguille/flèche indicatrice
+- score affiché au centre
+- design premium bancaire
+
+2. Date du jour dynamique
+
+Afficher la date du jour en temps réel sur les dashboards.
+Exemple :
+"Samedi 23 mai 2026"
+
+La date doit changer automatiquement selon le jour réel.
+Ne pas utiliser une date fixe.
+
+3. Statut des dossiers
+
+Dans les tableaux de dossiers :
+si une décision est rendue, ne pas afficher “Décision rendue”.
+Afficher directement :
+- Accord
+- Refus
+- Accord sous conditions
+
+Un seul statut final doit apparaître.
+
+4. Documents à collecter
+
+Modifier la page “Documents à collecter”.
+
+Elle ne doit pas être une simple liste globale confuse.
+
+Créer une vue organisée par dossier :
+- dossier client
+- nom du client
+- référence dossier
+- pourcentage de complétude
+- liste des documents manquants du dossier
+- bouton “Voir dossier”
+- bouton “Téléverser document”
+
+5. Nouveau dossier — ancienneté professionnelle
+
+Dans le formulaire “Nouveau dossier”, pour l’ancienneté professionnelle, permettre :
+- années
+- mois
+
+Exemple :
+- 8 ans
+- 11 mois
+- 2 ans et 6 mois
+
+Ne pas forcer uniquement les années.
+
+6. Nouveau dossier — type / objet du crédit
+
+Remplacer le champ texte libre par une liste déroulante.
+
+Liste de types de crédits particuliers :
+- Crédit immobilier résidence principale
+- Crédit immobilier investissement locatif
+- Crédit consommation
+- Crédit automobile
+- Crédit travaux
+- Crédit étudiant
+- Regroupement de crédits
+- Prêt personnel
+- Crédit renouvelable
+- Crédit professionnel individuel
+
+Objectif : éviter les doublons comme “crédit auto” et “crédit automobile”.
+
+7. Nouveau dossier — téléversement de documents
+
+Dans la création d’un nouveau dossier, ajouter une vraie section “Documents justificatifs”.
+
+Permettre de téléverser des fichiers PDF pour :
+- pièce d’identité
+- justificatif de domicile
+- bulletins de salaire
+- avis d’imposition
+- relevés bancaires
+- IBAN
+- justificatif professionnel
+- compromis de vente ou devis selon le type de crédit
+
+Afficher pour chaque document :
+- statut : fourni / manquant / à vérifier
+- nom du fichier téléversé
+- bouton téléverser
+- bouton remplacer
+- bouton supprimer
+
+8. Sauvegarde des nouveaux dossiers
+
+Les nouveaux dossiers créés doivent être sauvegardés.
+
+Après création :
+- le dossier apparaît dans “Mes dossiers”
+- il apparaît dans “Dossiers incomplets” si documents manquants
+- il apparaît dans “Documents à collecter” si documents manquants
+- il reste présent après rechargement de la page
+
+Utiliser la base de données ou un stockage persistant.
+
+9. Flux Conseiller → Analyste risque
+
+Ajouter un bouton “Transmettre à l’analyse risque” dans le dossier client côté conseiller.
+
+Règle :
+- tant que le dossier n’est pas transmis, l’analyste ne le voit pas
+- une fois transmis, le dossier apparaît dans l’espace Analyste risque
+- après transmission, le conseiller ne voit plus le bouton “Transmettre”
+- afficher un statut “Transmis à l’analyse risque”
+
+10. Espace Analyste risque
+
+Ajouter une barre de recherche dans “Dossiers à analyser”.
+
+Créer une page “Reporting” pour l’analyste avec :
+- nombre de dossiers analysés
+- nombre d’accords
+- nombre de refus
+- nombre d’accords sous conditions
+- score moyen
+- taux de refus
+- répartition des motifs de refus
+- évolution mensuelle des décisions
+
+11. Alertes conformité
+
+Modifier la page “Alertes conformité”.
+
+Afficher une ligne par dossier concerné, pas une ligne par alerte.
+
+Exemple :
+DOS-2024-0147 — Martin Dupont — 3 alertes — Niveau moyen
+
+Quand on ouvre le dossier ou l’alerte :
+afficher la liste détaillée des alertes du dossier :
+- taux d’endettement
+- incidents de paiement
+- découvert
+- FICP / FCC / PPE / LCB-FT
+- document à vérifier
+
+12. Dossiers analysés
+
+Ajouter une page ou une section “Dossiers analysés”.
+
+Afficher tous les dossiers déjà analysés par le service risque :
+- référence dossier
+- client
+- conseiller
+- analyste assigné
+- score
+- décision
+- date décision
+- commentaire analyste
+
+Les analystes voient les dossiers de tous les conseillers.
+Un dossier transmis arrive dans une file commune.
+Un analyste peut prendre en charge le dossier.
+À partir de ce moment, le dossier est assigné à cet analyste.
+
+13. Décisions analyste
+
+Quand l’analyste valide une décision :
+- enregistrer la décision
+- enregistrer le commentaire
+- retirer le dossier de “Dossiers à analyser”
+- faire apparaître le dossier dans “Dossiers analysés”
+- afficher la décision côté conseiller
+- ajouter une notification côté conseiller
+
+14. Ajouter un espace Conformité
+
+Créer un rôle ou espace “Service conformité”.
+
+Fonctions :
+- consulter les dossiers avec alertes réglementaires
+- suivre FICP, FCC, PPE, LCB-FT
+- voir les documents à vérifier
+- marquer une alerte comme traitée
+- ajouter un commentaire conformité
+- consulter l’historique conformité
+
+15. Administration SI / Data
+
+Conserver l’administrateur SI actuel.
+
+Ajouter une partie Data / Gouvernance dans l’administration.
+
+Ajouter des pages :
+- Infrastructure & sécurité cloud
+- Gouvernance des données
+- Dictionnaire de données
+- Classification des données
+- Sensibilité des données
+- Schéma de données
+- Tables principales
+
+Dans “Infrastructure & sécurité cloud”, afficher :
+- architecture applicative
+- base de données
+- API
+- stockage documents
+- sécurité
+- sauvegardes
+- chiffrement
+- authentification
+- logs
+
+Dans “Gouvernance des données”, afficher :
+- propriétaire de donnée
+- domaine de donnée
+- niveau de sensibilité
+- durée de conservation
+- qualité de donnée
+- conformité RGPD
+
+16. Option MFA
+
+Après la page de connexion, ajouter une page MFA inspirée de Microsoft Authenticator.
+
+Flux :
+- login
+- page MFA
+- code à 6 chiffres
+- bouton valider
+- puis accès au dashboard
+
+Pour la démo, accepter le code :
+123456
+
+17. Important
+
+Ne pas changer la structure visuelle principale qui plaît déjà.
+Ne pas recréer une nouvelle application.
+Améliorer uniquement la version actuelle.
+
+Toutes les nouvelles pages doivent être fonctionnelles.
+Tous les boutons importants doivent avoir une action.
+Les données doivent donner l’impression que le logiciel est déjà utilisé.

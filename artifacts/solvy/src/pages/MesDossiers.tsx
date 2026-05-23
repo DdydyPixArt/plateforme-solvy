@@ -1,8 +1,9 @@
 import { useState } from "react";
 import { useLocation } from "wouter";
 import Layout, { PageHeader } from "@/components/Layout";
+import { useDossiers } from "@/hooks/useApi";
 import { mockDossiers, DossierStatus } from "@/data/mockData";
-import { Search, Plus, Eye, ArrowUpDown, Filter, FileText } from "lucide-react";
+import { Search, Plus, Eye, ArrowUpDown, Filter, FileText, Loader2 } from "lucide-react";
 
 interface Props { role: string; userName: string; userInitials: string; onLogout: () => void; }
 
@@ -33,41 +34,38 @@ export default function MesDossiers({ role, userName, userInitials, onLogout }: 
   const [sortKey, setSortKey] = useState<SortKey>("dateCreation");
   const [sortAsc, setSortAsc] = useState(false);
 
-  const fmt = (n: number) => new Intl.NumberFormat("fr-FR", { style: "currency", currency: "EUR", maximumFractionDigits: 0 }).format(n);
+  const { data: dossiers = mockDossiers, isLoading } = useDossiers();
 
-  const types = Array.from(new Set(mockDossiers.map(d => {
-    const o = d.demande.objet.toLowerCase();
-    if (o.includes("immobilière") || o.includes("immobilier") || o.includes("résidence")) return "Immobilier";
-    if (o.includes("travaux") || o.includes("rénovation")) return "Travaux";
-    if (o.includes("véhicule") || o.includes("voiture") || o.includes("auto")) return "Véhicule";
-    return "Autre";
-  })));
+  const fmt = (n: number) => new Intl.NumberFormat("fr-FR", { style: "currency", currency: "EUR", maximumFractionDigits: 0 }).format(n);
 
   const getType = (objet: string) => {
     const o = objet.toLowerCase();
-    if (o.includes("immobilière") || o.includes("immobilier") || o.includes("résidence")) return "Immobilier";
+    if (o.includes("immobilière") || o.includes("immobilier") || o.includes("résidence") || o.includes("immobilier")) return "Immobilier";
     if (o.includes("travaux") || o.includes("rénovation")) return "Travaux";
     if (o.includes("véhicule") || o.includes("voiture") || o.includes("auto")) return "Véhicule";
     return "Autre";
   };
 
+  const types = Array.from(new Set(dossiers.map(d => getType(d.demande?.objet || ""))));
+
   const getCompletion = (docs: any[]) => {
+    if (!docs?.length) return 0;
     const fournis = docs.filter(d => d.statut === "fourni").length;
     return Math.round((fournis / docs.length) * 100);
   };
 
-  const filtered = mockDossiers
+  const filtered = dossiers
     .filter(d => {
-      const t = `${d.reference} ${d.client.nom} ${d.client.prenom} ${d.demande.objet}`.toLowerCase();
+      const t = `${d.reference} ${d.client?.nom} ${d.client?.prenom} ${d.demande?.objet}`.toLowerCase();
       const matchSearch = t.includes(search.toLowerCase());
       const matchStatus = statusFilter === "all" || d.status === statusFilter;
-      const matchType = typeFilter === "all" || getType(d.demande.objet) === typeFilter;
+      const matchType = typeFilter === "all" || getType(d.demande?.objet || "") === typeFilter;
       return matchSearch && matchStatus && matchType;
     })
     .sort((a, b) => {
       let va: number, vb: number;
       if (sortKey === "dateCreation") { va = new Date(a.dateCreation).getTime(); vb = new Date(b.dateCreation).getTime(); }
-      else if (sortKey === "demande.montant") { va = a.demande.montant; vb = b.demande.montant; }
+      else if (sortKey === "demande.montant") { va = a.demande?.montant ?? 0; vb = b.demande?.montant ?? 0; }
       else { va = a.score ?? -1; vb = b.score ?? -1; }
       return sortAsc ? va - vb : vb - va;
     });
@@ -98,14 +96,14 @@ export default function MesDossiers({ role, userName, userInitials, onLogout }: 
         {/* KPIs */}
         <div className="grid grid-cols-5 gap-3">
           {[
-            { label: "Total", value: mockDossiers.length, cls: "text-gray-700" },
-            { label: "Incomplets", value: mockDossiers.filter(d => d.status === "incomplet").length, cls: "text-orange-600" },
-            { label: "En analyse", value: mockDossiers.filter(d => d.status === "en_analyse").length, cls: "text-blue-600" },
-            { label: "Score calculé", value: mockDossiers.filter(d => d.status === "score_calcule").length, cls: "text-purple-600" },
-            { label: "Décisions", value: mockDossiers.filter(d => d.status === "decision_rendue").length, cls: "text-amber-600" },
+            { label: "Total", value: dossiers.length, cls: "text-gray-700" },
+            { label: "Incomplets", value: dossiers.filter(d => d.status === "incomplet").length, cls: "text-orange-600" },
+            { label: "En analyse", value: dossiers.filter(d => d.status === "en_analyse").length, cls: "text-blue-600" },
+            { label: "Score calculé", value: dossiers.filter(d => d.status === "score_calcule").length, cls: "text-purple-600" },
+            { label: "Décisions", value: dossiers.filter(d => d.status === "decision_rendue").length, cls: "text-amber-600" },
           ].map(({ label, value, cls }) => (
             <div key={label} className="bg-white border border-gray-200 rounded-xl shadow-sm p-4 text-center">
-              <div className={`text-2xl font-bold ${cls}`}>{value}</div>
+              <div className={`text-2xl font-bold ${cls}`}>{isLoading ? "—" : value}</div>
               <div className="text-xs mt-0.5" style={{ color: sub }}>{label}</div>
             </div>
           ))}
@@ -132,6 +130,7 @@ export default function MesDossiers({ role, userName, userInitials, onLogout }: 
             <button onClick={() => { setSearch(""); setStatusFilter("all"); setTypeFilter("all"); }}
               className="text-xs text-gray-400 hover:text-gray-600 transition-colors">Réinitialiser</button>
           )}
+          {isLoading && <Loader2 className="w-4 h-4 text-amber-500 animate-spin" />}
         </div>
 
         {/* Table */}
@@ -158,12 +157,14 @@ export default function MesDossiers({ role, userName, userInitials, onLogout }: 
             </thead>
             <tbody>
               {filtered.length === 0 && (
-                <tr><td colSpan={9} className="px-5 py-8 text-center text-sm" style={{ color: sub }}>Aucun dossier trouvé</td></tr>
+                <tr><td colSpan={9} className="px-5 py-8 text-center text-sm" style={{ color: sub }}>
+                  {isLoading ? "Chargement..." : "Aucun dossier trouvé"}
+                </td></tr>
               )}
               {filtered.map((d, i) => {
-                const sc = statusConfig[d.status];
+                const sc = statusConfig[d.status as DossierStatus] || statusConfig.incomplet;
                 const completion = getCompletion(d.documents);
-                const type = getType(d.demande.objet);
+                const type = getType(d.demande?.objet || "");
                 return (
                   <tr key={d.id} className={`border-b border-gray-50 hover:bg-amber-50/30 cursor-pointer transition-colors ${i % 2 === 1 ? "bg-gray-50/30" : ""}`}
                     onClick={() => setLocation(`/dossier/${d.id}`)}>
@@ -171,14 +172,14 @@ export default function MesDossiers({ role, userName, userInitials, onLogout }: 
                       <span className="text-xs font-mono font-semibold" style={{ color: "hsl(43 57% 38%)" }}>{d.reference}</span>
                     </td>
                     <td className="px-5 py-3.5">
-                      <div className="text-sm font-semibold" style={{ color: txt }}>{d.client.nom} {d.client.prenom}</div>
-                      <div className="text-[10px]" style={{ color: sub }}>{d.situationPro.statut} · {d.situationPro.employeur}</div>
+                      <div className="text-sm font-semibold" style={{ color: txt }}>{d.client?.nom} {d.client?.prenom}</div>
+                      <div className="text-[10px]" style={{ color: sub }}>{d.situationPro?.statut} · {d.situationPro?.employeur}</div>
                     </td>
                     <td className="px-5 py-3.5">
                       <span className="text-xs px-2 py-1 rounded-full border bg-gray-50 border-gray-200 text-gray-600">{type}</span>
                     </td>
                     <td className="px-5 py-3.5">
-                      <span className="text-sm font-semibold" style={{ color: txt }}>{fmt(d.demande.montant)}</span>
+                      <span className="text-sm font-semibold" style={{ color: txt }}>{fmt(d.demande?.montant || 0)}</span>
                     </td>
                     <td className="px-5 py-3.5">
                       {d.score
@@ -189,9 +190,9 @@ export default function MesDossiers({ role, userName, userInitials, onLogout }: 
                       <span className={`flex items-center gap-1.5 text-xs font-medium px-2.5 py-1 rounded-full border w-fit ${sc.bg} ${sc.color}`}>
                         <span className={`w-1.5 h-1.5 rounded-full ${sc.dot}`} />{sc.label}
                       </span>
-                      {d.decision && (
-                        <span className={`flex items-center text-[10px] font-semibold px-2 py-0.5 rounded-full border mt-1 w-fit ${decisionConf[d.decision].color}`}>
-                          {decisionConf[d.decision].label}
+                      {d.decision && (decisionConf as any)[d.decision] && (
+                        <span className={`flex items-center text-[10px] font-semibold px-2 py-0.5 rounded-full border mt-1 w-fit ${(decisionConf as any)[d.decision].color}`}>
+                          {(decisionConf as any)[d.decision].label}
                         </span>
                       )}
                     </td>

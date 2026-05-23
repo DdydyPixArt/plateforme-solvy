@@ -1,7 +1,8 @@
 import { useLocation, useParams } from "wouter";
 import { useRef } from "react";
 import Layout, { PageHeader } from "@/components/Layout";
-import { mockDossiers, scoreDetails } from "@/data/mockData";
+import { scoreDetails, mockDossiers } from "@/data/mockData";
+import { useDossier } from "@/hooks/useApi";
 import { ArrowLeft, Printer, Download, CheckCircle, XCircle, AlertTriangle, Shield, FileText } from "lucide-react";
 
 interface Props { role: string; userName: string; userInitials: string; onLogout: () => void; }
@@ -45,9 +46,10 @@ const fmtE = (n: number) => new Intl.NumberFormat("fr-FR", { style: "currency", 
 export default function ExportPDF({ role, userName, userInitials, onLogout }: Props) {
   const [, setLocation] = useLocation();
   const params = useParams<{ id: string }>();
-  const dossier = mockDossiers.find(d => d.id === params.id) || mockDossiers[0];
+  const { data: dossierData } = useDossier(params.id);
+  const dossier = dossierData || mockDossiers.find(d => d.id === params.id) || mockDossiers[0];
   const printRef = useRef<HTMLDivElement>(null);
-  const score = dossier.score || 742;
+  const score = dossier?.score || 742;
 
   const recoLabel = score >= 700 ? "ACCORD POSSIBLE" : score >= 400 ? "ACCORD SOUS CONDITIONS" : "REFUS RECOMMANDÉ";
   const recoBg = score >= 700 ? "#d1fae5" : score >= 400 ? "#fef3c7" : "#fee2e2";

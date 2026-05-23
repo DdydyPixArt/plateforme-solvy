@@ -1,7 +1,7 @@
 import { useState } from "react";
 import Layout, { PageHeader } from "@/components/Layout";
-import { mockAuditEntries } from "@/data/mockData";
-import { CheckCircle, AlertTriangle, XCircle, Info, Download, Shield, Search } from "lucide-react";
+import { useAuditLogs } from "@/hooks/useApi";
+import { CheckCircle, AlertTriangle, XCircle, Info, Download, Shield, Search, Loader2 } from "lucide-react";
 
 interface AuditProps { role: string; userName: string; userInitials: string; onLogout: () => void; }
 
@@ -20,11 +20,13 @@ export default function Audit({ role, userName, userInitials, onLogout }: AuditP
   const [statusFilter, setStatusFilter] = useState("all");
   const [dossierFilter, setDossierFilter] = useState("all");
 
-  const dossierRefs = Array.from(new Set(mockAuditEntries.map(e => e.dossierRef)));
+  const { data: auditEntries = [], isLoading } = useAuditLogs();
 
-  const filtered = mockAuditEntries.filter(e => {
-    const txt2 = `${e.utilisateur} ${e.action} ${e.details} ${e.dossierRef}`.toLowerCase();
-    return txt2.includes(search.toLowerCase())
+  const dossierRefs = Array.from(new Set(auditEntries.map((e: any) => e.dossierRef).filter(Boolean)));
+
+  const filtered = auditEntries.filter((e: any) => {
+    const t = `${e.utilisateur} ${e.action} ${e.details} ${e.dossierRef}`.toLowerCase();
+    return t.includes(search.toLowerCase())
       && (statusFilter === "all" || e.statut === statusFilter)
       && (dossierFilter === "all" || e.dossierRef === dossierFilter);
   });
@@ -41,7 +43,6 @@ export default function Audit({ role, userName, userInitials, onLogout }: AuditP
       </PageHeader>
 
       <div className="flex-1 overflow-y-auto px-8 py-6 space-y-5">
-        {/* Stats */}
         <div className="grid grid-cols-4 gap-4">
           {Object.entries(statusConfig).map(([key, { color, bg, icon: Icon, label }]) => (
             <div key={key} className="bg-white border border-gray-200 rounded-xl shadow-sm p-4 flex items-center gap-3">
@@ -49,14 +50,15 @@ export default function Audit({ role, userName, userInitials, onLogout }: AuditP
                 <Icon className={`w-4 h-4 ${color}`} />
               </div>
               <div>
-                <div className={`text-xl font-bold ${color}`}>{mockAuditEntries.filter(e => e.statut === key).length}</div>
+                <div className={`text-xl font-bold ${color}`}>
+                  {isLoading ? "—" : auditEntries.filter((e: any) => e.statut === key).length}
+                </div>
                 <div className="text-xs" style={{ color: sub }}>{label}</div>
               </div>
             </div>
           ))}
         </div>
 
-        {/* Filters */}
         <div className="flex items-center gap-3">
           <div className="relative flex-1 max-w-xs">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400" />
@@ -73,10 +75,10 @@ export default function Audit({ role, userName, userInitials, onLogout }: AuditP
             <option value="all">Tous les dossiers</option>
             {dossierRefs.map(r => <option key={r} value={r}>{r}</option>)}
           </select>
+          {isLoading && <Loader2 className="w-4 h-4 text-amber-500 animate-spin" />}
           <span className="text-xs" style={{ color: sub }}>{filtered.length} entrée(s)</span>
         </div>
 
-        {/* Table */}
         <div className="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">
           <table className="w-full">
             <thead>
@@ -87,8 +89,13 @@ export default function Audit({ role, userName, userInitials, onLogout }: AuditP
               </tr>
             </thead>
             <tbody>
-              {filtered.map((entry, i) => {
-                const sc = statusConfig[entry.statut];
+              {filtered.length === 0 && (
+                <tr><td colSpan={7} className="px-5 py-8 text-center text-sm" style={{ color: sub }}>
+                  {isLoading ? "Chargement..." : "Aucune entrée d'audit"}
+                </td></tr>
+              )}
+              {filtered.map((entry: any, i: number) => {
+                const sc = (statusConfig as any)[entry.statut] || statusConfig.info;
                 const Icon = sc.icon;
                 return (
                   <tr key={entry.id} className={`border-b border-gray-50 hover:bg-amber-50/30 transition-colors ${i % 2 === 1 ? "bg-gray-50/30" : ""}`}>
@@ -101,7 +108,7 @@ export default function Audit({ role, userName, userInitials, onLogout }: AuditP
                         <div className="w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0"
                           style={{ background: "hsl(43 57% 54% / 0.15)", border: "1px solid hsl(43 57% 54% / 0.3)" }}>
                           <span className="text-[9px] font-bold" style={{ color: "hsl(43 57% 42%)" }}>
-                            {entry.utilisateur.split(" ").map(n => n[0]).join("").slice(0, 2)}
+                            {entry.utilisateur?.split(" ").map((n: string) => n[0]).join("").slice(0, 2)}
                           </span>
                         </div>
                         <span className="text-xs" style={{ color: txt }}>{entry.utilisateur}</span>
@@ -125,7 +132,6 @@ export default function Audit({ role, userName, userInitials, onLogout }: AuditP
           </table>
         </div>
 
-        {/* RGPD notice */}
         <div className="bg-blue-50 border border-blue-100 rounded-xl px-6 py-4 text-xs" style={{ color: sub }}>
           <div className="font-semibold mb-2" style={{ color: txt }}>Politique de conservation et conformité</div>
           <div className="grid grid-cols-3 gap-4">

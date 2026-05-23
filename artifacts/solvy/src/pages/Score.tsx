@@ -1,7 +1,8 @@
 import { useLocation, useParams } from "wouter";
 import Layout, { PageHeader } from "@/components/Layout";
-import { mockDossiers, scoreDetails } from "@/data/mockData";
-import { ArrowLeft, AlertTriangle, CheckCircle, XCircle, Info, Printer } from "lucide-react";
+import { scoreDetails, mockDossiers } from "@/data/mockData";
+import { useDossier } from "@/hooks/useApi";
+import { ArrowLeft, AlertTriangle, CheckCircle, XCircle, Info, Printer, Loader2 } from "lucide-react";
 
 interface ScoreProps { role: string; userName: string; userInitials: string; onLogout: () => void; }
 
@@ -86,8 +87,9 @@ function SemiCircleGauge({ score }: { score: number }) {
 export default function Score({ role, userName, userInitials, onLogout }: ScoreProps) {
   const [, setLocation] = useLocation();
   const params = useParams<{ id: string }>();
-  const dossier = mockDossiers.find(d => d.id === params.id) || mockDossiers[0];
-  const score = dossier.score || 742;
+  const { data: dossierData, isLoading } = useDossier(params.id);
+  const dossier = dossierData || mockDossiers.find(d => d.id === params.id) || mockDossiers[0];
+  const score = dossier?.score || 742;
 
   const recoBg = score >= 700 ? "bg-emerald-50 border-emerald-200" : score >= 400 ? "bg-amber-50 border-amber-200" : "bg-red-50 border-red-200";
   const recoText = score >= 700 ? "text-emerald-700" : score >= 400 ? "text-amber-700" : "text-red-700";

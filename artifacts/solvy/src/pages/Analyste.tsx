@@ -1,23 +1,29 @@
 import { useState } from "react";
 import { useLocation } from "wouter";
 import Layout, { PageHeader } from "@/components/Layout";
-import { mockDossiers, scoreDetails } from "@/data/mockData";
-import { AlertTriangle, CheckCircle, XCircle, Shield, FileCheck, Eye } from "lucide-react";
+import { usePendingDossiers, useEnregistrerDecision } from "@/hooks/useApi";
+import { scoreDetails } from "@/data/mockData";
+import { AlertTriangle, CheckCircle, XCircle, Shield, FileCheck, Eye, Loader2 } from "lucide-react";
 
 interface AnalysteProps { role: string; userName: string; userInitials: string; onLogout: () => void; }
-
-const pendingDossiers = mockDossiers.filter(d => d.status === "score_calcule" || d.status === "en_analyse");
 
 const txt = "hsl(220 25% 14%)";
 const sub = "hsl(220 12% 48%)";
 
 export default function Analyste({ role, userName, userInitials, onLogout }: AnalysteProps) {
   const [, setLocation] = useLocation();
-  const [selected, setSelected] = useState(pendingDossiers[0]);
+  const { data: pendingDossiers = [], isLoading } = usePendingDossiers();
+  const enregistrerDecision = useEnregistrerDecision();
+
+  const [selectedId, setSelectedId] = useState<string | null>(null);
   const [decision, setDecision] = useState<"accord" | "refus" | "accord_conditions">("accord_conditions");
-  const [commentaire, setCommentaire] = useState("Le taux d'endettement de 38.6% dépasse le seuil réglementaire de 35%. Cependant, la stabilité professionnelle (CDI, 8 ans) et le reste à vivre satisfaisant permettent d'envisager un accord sous conditions. Exiger un apport supplémentaire de 10 000 € ou une assurance renforcée.");
-  const [validated, setValidated] = useState(false);
+  const [commentaire, setCommentaire] = useState("Le taux d'endettement dépasse le seuil réglementaire de 35%. Cependant, la stabilité professionnelle et le reste à vivre satisfaisant permettent d'envisager un accord sous conditions. Exiger un apport supplémentaire ou une assurance renforcée.");
+  const [validated, setValidated] = useState<Record<string, boolean>>({});
   const [docRequest, setDocRequest] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+
+  const selected = pendingDossiers.find(d => d.id === selectedId) || pendingDossiers[0] || null;
+  const isValidated = selected ? validated[selected.id] : false;
 
   const score = selected?.score || 0;
   const scoreCls = score >= 700 ? "text-emerald-700 bg-emerald-50 border-emerald-200"
@@ -26,13 +32,31 @@ export default function Analyste({ role, userName, userInitials, onLogout }: Ana
 
   const fmt = (n: number) => new Intl.NumberFormat("fr-FR", { style: "currency", currency: "EUR", maximumFractionDigits: 0 }).format(n);
 
-  const alerts = [
-    ...(selected?.tauxEndettement > 35 ? [{ type: "warning" as const, msg: `Taux d'endettement ${selected.tauxEndettement}% > seuil 35%` }] : []),
-    ...(selected?.incidents > 0 ? [{ type: "warning" as const, msg: `${selected.incidents} incident(s) de paiement (24 mois)` }] : []),
-    ...(selected?.ppe ? [{ type: "error" as const, msg: "Statut PPE — Vérification LCB-FT renforcée requise" }] : []),
-    ...(selected?.ficp ? [{ type: "error" as const, msg: "Client inscrit au FICP — Risque élevé" }] : []),
-    ...(selected?.lcbft ? [{ type: "success" as const, msg: "Contrôle LCB-FT conforme" }] : [{ type: "error" as const, msg: "Contrôle LCB-FT non effectué" }]),
-  ];
+  const alerts = selected ? [
+    ...(selected.tauxEndettement > 35 ? [{ type: "warning" as const, msg: `Taux d'endettement ${selected.tauxEndettement}% > seuil 35%` }] : []),
+    ...(selected.incidents > 0 ? [{ type: "warning" as const, msg: `${selected.incidents} incident(s) de paiement (24 mois)` }] : []),
+    ...(selected.ppe ? [{ type: "error" as const, msg: "Statut PPE — Vérification LCB-FT renforcée requise" }] : []),
+    ...(selected.ficp ? [{ type: "error" as const, msg: "Client inscrit au FICP — Risque élevé" }] : []),
+    ...(selected.lcbft ? [{ type: "success" as const, msg: "Contrôle LCB-FT conforme" }] : [{ type: "error" as const, msg: "Contrôle LCB-FT non effectué" }]),
+  ] : [];
+
+  const handleValider = async () => {
+    if (!selected) return;
+    setSubmitting(true);
+    try {
+      await enregistrerDecision.mutateAsync({
+        id: selected.id,
+        decision,
+        commentaire,
+        analyste: userName,
+      });
+      setValidated(v => ({ ...v, [selected.id]: true }));
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setSubmitting(false);
+    }
+  };
 
   return (
     <Layout role={role} userName={userName} userInitials={userInitials} onLogout={onLogout}>
@@ -42,21 +66,31 @@ export default function Analyste({ role, userName, userInitials, onLogout }: Ana
         {/* Left list */}
         <div className="w-64 flex-shrink-0 bg-white border-r border-gray-200 overflow-y-auto">
           <div className="px-4 py-3 border-b border-gray-100" style={{ background: "hsl(220 20% 97%)" }}>
-            <div className="text-[10px] uppercase tracking-widest font-semibold" style={{ color: sub }}>En attente ({pendingDossiers.length})</div>
+            <div className="text-[10px] uppercase tracking-widest font-semibold flex items-center gap-2" style={{ color: sub }}>
+              En attente ({pendingDossiers.length})
+              {isLoading && <Loader2 className="w-3 h-3 animate-spin text-amber-500" />}
+            </div>
           </div>
           <div className="p-2 space-y-1">
+            {pendingDossiers.length === 0 && !isLoading && (
+              <div className="px-3 py-6 text-center text-xs" style={{ color: sub }}>Aucun dossier en attente</div>
+            )}
             {pendingDossiers.map(d => {
               const sc = d.score || 0;
-              const isSelected = selected?.id === d.id;
-              const alerts = [...(d.ppe ? ["PPE"] : []), ...(d.ficp ? ["FICP"] : [])];
+              const isSelected = (selected?.id === d.id) || (!selectedId && pendingDossiers[0]?.id === d.id);
+              const alertTags = [...(d.ppe ? ["PPE"] : []), ...(d.ficp ? ["FICP"] : [])];
+              const isValidatedItem = validated[d.id];
               return (
-                <button key={d.id} onClick={() => setSelected(d)}
+                <button key={d.id} onClick={() => setSelectedId(d.id)}
                   className={`w-full text-left p-3 rounded-xl border transition-all ${isSelected ? "border-amber-300 bg-amber-50" : "border-transparent hover:bg-gray-50"}`}>
                   <div className="text-xs font-mono font-semibold mb-0.5" style={{ color: "hsl(43 57% 38%)" }}>{d.reference}</div>
-                  <div className="text-sm font-semibold" style={{ color: txt }}>{d.client.nom} {d.client.prenom}</div>
+                  <div className="text-sm font-semibold" style={{ color: txt }}>{d.client?.nom} {d.client?.prenom}</div>
+                  {isValidatedItem && (
+                    <div className="text-[10px] text-emerald-600 font-medium mt-1">✓ Décision enregistrée</div>
+                  )}
                   <div className="flex items-center justify-between mt-2">
                     <div className="flex gap-1">
-                      {alerts.map(a => <span key={a} className="text-[10px] px-1.5 py-0.5 rounded bg-red-50 border border-red-200 text-red-600 font-medium">{a}</span>)}
+                      {alertTags.map(a => <span key={a} className="text-[10px] px-1.5 py-0.5 rounded bg-red-50 border border-red-200 text-red-600 font-medium">{a}</span>)}
                     </div>
                     <span className={`text-sm font-bold ${sc >= 700 ? "text-emerald-600" : sc >= 400 ? "text-amber-600" : "text-red-600"}`}>{sc}</span>
                   </div>
@@ -77,8 +111,8 @@ export default function Analyste({ role, userName, userInitials, onLogout }: Ana
                     <span className="text-xs text-gray-400">·</span>
                     <span className="text-xs" style={{ color: sub }}>Créé le {selected.dateCreation}</span>
                   </div>
-                  <h2 className="text-base font-semibold" style={{ color: txt }}>{selected.client.prenom} {selected.client.nom}</h2>
-                  <div className="text-sm mt-0.5" style={{ color: sub }}>{fmt(selected.demande.montant)} — {selected.demande.objet}</div>
+                  <h2 className="text-base font-semibold" style={{ color: txt }}>{selected.client?.prenom} {selected.client?.nom}</h2>
+                  <div className="text-sm mt-0.5" style={{ color: sub }}>{fmt(selected.demande?.montant || 0)} — {selected.demande?.objet}</div>
                 </div>
                 <div className="flex items-center gap-3">
                   <span className={`px-3 py-1.5 rounded-full border text-sm font-bold ${scoreCls}`}>{score}/1000</span>
@@ -89,7 +123,6 @@ export default function Analyste({ role, userName, userInitials, onLogout }: Ana
                 </div>
               </div>
 
-              {/* Alerts */}
               {alerts.length > 0 && (
                 <div className="space-y-2">
                   {alerts.map((a, i) => (
@@ -101,10 +134,9 @@ export default function Analyste({ role, userName, userInitials, onLogout }: Ana
                 </div>
               )}
 
-              {/* Financial summary */}
               <div className="grid grid-cols-4 gap-3">
                 {[
-                  { label: "Revenus nets", value: fmt(selected.finances.revenusNets) + "/m", cls: "text-emerald-600" },
+                  { label: "Revenus nets", value: fmt(selected.finances?.revenusNets || 0) + "/m", cls: "text-emerald-600" },
                   { label: "Taux endettement", value: `${selected.tauxEndettement}%`, cls: selected.tauxEndettement > 35 ? "text-red-600" : "text-emerald-600" },
                   { label: "Capacité emprunt", value: fmt(selected.capaciteEmprunt) + "/m", cls: "text-amber-600" },
                   { label: "Reste à vivre", value: fmt(selected.resteAVivre) + "/m", cls: "text-blue-600" },
@@ -116,20 +148,19 @@ export default function Analyste({ role, userName, userInitials, onLogout }: Ana
                 ))}
               </div>
 
-              {/* Documents */}
               <div className="bg-white border border-gray-200 rounded-xl shadow-sm p-5">
                 <div className="flex items-center gap-2 mb-4">
                   <FileCheck className="w-4 h-4 text-gray-400" />
                   <h3 className="text-sm font-semibold" style={{ color: txt }}>Contrôle documentaire</h3>
                 </div>
                 <div className="grid grid-cols-2 gap-2">
-                  {selected.documents.map((doc, i) => {
+                  {(selected.documents || []).map((doc: any, i: number) => {
                     const icons = { fourni: CheckCircle, manquant: XCircle, a_verifier: AlertTriangle };
                     const cls = { fourni: "text-emerald-600", manquant: "text-red-600", a_verifier: "text-amber-600" };
-                    const Icon = icons[doc.statut];
+                    const Icon = (icons as any)[doc.statut] || AlertTriangle;
                     return (
                       <div key={i} className="flex items-center gap-2 text-xs">
-                        <Icon className={`w-3.5 h-3.5 flex-shrink-0 ${cls[doc.statut]}`} />
+                        <Icon className={`w-3.5 h-3.5 flex-shrink-0 ${(cls as any)[doc.statut] || "text-gray-400"}`} />
                         <span style={{ color: txt }}>{doc.nom}</span>
                       </div>
                     );
@@ -137,7 +168,6 @@ export default function Analyste({ role, userName, userInitials, onLogout }: Ana
                 </div>
               </div>
 
-              {/* Score breakdown mini */}
               <div className="bg-white border border-gray-200 rounded-xl shadow-sm p-5">
                 <div className="flex items-center gap-2 mb-3">
                   <Shield className="w-4 h-4 text-gray-400" />
@@ -170,7 +200,7 @@ export default function Analyste({ role, userName, userInitials, onLogout }: Ana
             <p className="text-xs mt-0.5" style={{ color: sub }}>Analyste : {userName}</p>
           </div>
 
-          {validated ? (
+          {isValidated ? (
             <div className="flex flex-col items-center gap-3 py-8">
               <div className="w-14 h-14 rounded-full bg-emerald-50 border border-emerald-200 flex items-center justify-center">
                 <CheckCircle className="w-7 h-7 text-emerald-600" />
@@ -179,7 +209,8 @@ export default function Analyste({ role, userName, userInitials, onLogout }: Ana
               <div className={`text-xs font-semibold px-3 py-1.5 rounded-full border ${decision === "accord" ? "bg-emerald-50 border-emerald-200 text-emerald-700" : decision === "refus" ? "bg-red-50 border-red-200 text-red-700" : "bg-amber-50 border-amber-200 text-amber-700"}`}>
                 {decision === "accord" ? "ACCORD" : decision === "refus" ? "REFUS" : "ACCORD SOUS CONDITIONS"}
               </div>
-              <button onClick={() => setValidated(false)} className="text-xs text-gray-400 hover:text-gray-600 mt-2">Modifier</button>
+              <p className="text-xs text-center" style={{ color: sub }}>La notification a été envoyée au conseiller.</p>
+              <button onClick={() => setValidated(v => ({ ...v, [selected!.id]: false }))} className="text-xs text-gray-400 hover:text-gray-600 mt-2">Modifier</button>
             </div>
           ) : (
             <>
@@ -195,7 +226,7 @@ export default function Analyste({ role, userName, userInitials, onLogout }: Ana
                       <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center flex-shrink-0 ${decision === opt.value ? "border-current" : "border-gray-300"}`}>
                         {decision === opt.value && <div className="w-2 h-2 rounded-full bg-current" />}
                       </div>
-                      <input type="radio" name="decision" value={opt.value} checked={decision === (opt.value as any)} onChange={() => setDecision(opt.value as any)} className="sr-only" />
+                      <input type="radio" name="decision" value={opt.value} checked={decision === opt.value as any} onChange={() => setDecision(opt.value as any)} className="sr-only" />
                       <span className="text-sm font-medium">{opt.label}</span>
                     </label>
                   ))}
@@ -210,10 +241,11 @@ export default function Analyste({ role, userName, userInitials, onLogout }: Ana
               </div>
 
               <div className="space-y-2">
-                <button onClick={() => setValidated(true)}
-                  className="w-full flex items-center justify-center gap-2 text-white text-sm font-semibold py-2.5 rounded-xl transition-all hover:opacity-90"
+                <button onClick={handleValider} disabled={submitting || !selected}
+                  className="w-full flex items-center justify-center gap-2 text-white text-sm font-semibold py-2.5 rounded-xl transition-all hover:opacity-90 disabled:opacity-60"
                   style={{ background: "hsl(43 60% 46%)" }}>
-                  <CheckCircle className="w-4 h-4" /> Valider la décision
+                  {submitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle className="w-4 h-4" />}
+                  Valider la décision
                 </button>
                 <button onClick={() => setDocRequest(!docRequest)}
                   className={`w-full flex items-center justify-center gap-2 border text-sm font-medium py-2.5 rounded-xl transition-all ${docRequest ? "border-blue-200 bg-blue-50 text-blue-700" : "border-gray-200 text-gray-500 hover:bg-gray-50"}`}>
