@@ -11,7 +11,7 @@ import {
   Users, ShieldAlert, ArrowUpRight, ArrowDownRight, BarChart3, Plus
 } from "lucide-react";
 
-interface DashboardProps { role: string; userName: string; userInitials: string; onLogout: () => void; }
+interface DashboardProps { role: string; userName: string; userInitials: string; userEmail?: string; onLogout: () => void; }
 
 const monthlyData = [
   { mois: "Sep", dossiers: 12, decisions: 9, accords: 7 },
@@ -39,11 +39,11 @@ const txt = "hsl(220 25% 14%)";
 const sub = "hsl(220 12% 48%)";
 const light = "hsl(220 12% 58%)";
 
-function ConseillerDashboard({ role, userName, userInitials, onLogout }: DashboardProps) {
+function ConseillerDashboard({ role, userName, userInitials, userEmail, onLogout }: DashboardProps) {
   const [, setLocation] = useLocation();
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
-  const { data: dossiers = mockDossiers } = useDossiers();
+  const { data: dossiers = mockDossiers } = useDossiers(userEmail ? { conseiller: userEmail } : undefined);
 
   const filtered = dossiers.filter(d => {
     const t = `${d.reference} ${d.client?.nom} ${d.client?.prenom}`.toLowerCase();

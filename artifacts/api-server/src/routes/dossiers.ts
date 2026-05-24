@@ -125,7 +125,8 @@ router.post("/", async (req, res) => {
         statut: body.statut || "CDI",
         employeur: body.employeur || "",
         secteur: body.secteur || "",
-        anciennete: Number(body.anciennete) || 0,
+        ancienneteMois: (Number(body.ancienneteAns) || 0) * 12 + (Number(body.ancienneteMois) || 0),
+        anciennete: (Number(body.ancienneteAns) || 0) + ((Number(body.ancienneteMois) || 0) / 12),
         poste: body.poste || "",
       },
       finances: { revenusNets, autresRevenus, chargesFixes, creditsEnCours },
@@ -247,6 +248,109 @@ router.post("/:id/decision", async (req, res) => {
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "Erreur" });
+  }
+});
+
+router.patch("/:id", async (req, res) => {
+  try {
+    const rows = await db.select().from(dossiersTable).where(eq(dossiersTable.id, req.params.id));
+    if (rows.length === 0) return res.status(404).json({ error: "Dossier introuvable" });
+
+    const current = rows[0];
+
+    if (current.decision) {
+      return res.status(403).json({ error: "Ce dossier a déjà une décision finale et ne peut plus être modifié." });
+    }
+
+    const body = req.body;
+    const revenusNets = body.revenusNets !== undefined ? Number(body.revenusNets) : (current.finances as any)?.revenusNets ?? 0;
+    const chargesFixes = body.chargesFixes !== undefined ? Number(body.chargesFixes) : (current.finances as any)?.chargesFixes ?? 0;
+    const creditsEnCours = body.creditsEnCours !== undefined ? Number(body.creditsEnCours) : (current.finances as any)?.creditsEnCours ?? 0;
+    const autresRevenus = body.autresRevenus !== undefined ? Number(body.autresRevenus) : (current.finances as any)?.autresRevenus ?? 0;
+    const totalCharges = chargesFixes + creditsEnCours;
+    const tauxEndettement = revenusNets > 0 ? Math.round((totalCharges / revenusNets) * 1000) / 10 : 0;
+    const capaciteEmprunt = Math.max(0, revenusNets * 0.33 - creditsEnCours);
+    const resteAVivre = revenusNets + autresRevenus - totalCharges;
+
+    const ancienneteTotalMois = (Number(body.ancienneteAns) || 0) * 12 + (Number(body.ancienneteMois) || 0);
+    const ancienneteLegacy = (Number(body.ancienneteAns) || 0) + ((Number(body.ancienneteMois) || 0) / 12);
+
+    const client = {
+      ...(current.client as any),
+      nom: body.nom ?? (current.client as any)?.nom,
+      prenom: body.prenom ?? (current.client as any)?.prenom,
+      dateNaissance: body.dateNaissance ?? (current.client as any)?.dateNaissance,
+      adresse: body.adresse ?? (current.client as any)?.adresse,
+      ville: body.ville ?? (current.client as any)?.ville,
+      codePostal: body.codePostal ?? (current.client as any)?.codePostal,
+      situationFamiliale: body.situationFamiliale ?? (current.client as any)?.situationFamiliale,
+      personnesCharge: body.personnesCharge !== undefined ? Number(body.personnesCharge) : (current.client as any)?.personnesCharge,
+      telephone: body.telephone ?? (current.client as any)?.telephone ?? "",
+      email: body.emailClient ?? (current.client as any)?.email ?? "",
+    };
+
+    const situationPro = {
+      ...(current.situationPro as any),
+      statut: body.statut ?? (current.situationPro as any)?.statut,
+      employeur: body.employeur ?? (current.situationPro as any)?.employeur,
+      secteur: body.secteur ?? (current.situationPro as any)?.secteur,
+      poste: body.poste ?? (current.situationPro as any)?.poste,
+      ...(body.ancienneteAns !== undefined || body.ancienneteMois !== undefined ? {
+        ancienneteMois: ancienneteTotalMois,
+        anciennete: ancienneteLegacy,
+      } : {}),
+    };
+
+    const finances = { revenusNets, autresRevenus, chargesFixes, creditsEnCours };
+    const demande = {
+      ...(current.demande as any),
+      montant: body.montant !== undefined ? Number(body.montant) : (current.demande as any)?.montant,
+      duree: body.duree !== undefined ? Number(body.duree) : (current.demande as any)?.duree,
+      objet: body.objet ?? (current.demande as any)?.objet,
+      apport: body.apport !== undefined ? Number(body.apport) : (current.demande as any)?.apport,
+      garant: body.garant !== undefined ? (body.garant === "Oui" || body.garant === true) : (current.demande as any)?.garant,
+      valeurActif: body.valeurActif !== undefined ? Number(body.valeurActif) : (current.demande as any)?.valeurActif,
+    };
+
+    const documents = body.documents !== undefined ? body.documents : current.documents;
+    const anyMissing = (documents as any[]).some((d: any) => d.statut === "manquant");
+    const newStatus = current.status === "en_analyse" ? "en_analyse" : anyMissing ? "incomplet" : (current.score ? "score_calcule" : "incomplet");
+
+    const now = nowDateTime();
+    const historique = Array.isArray(current.historique) ? [...(current.historique as any[])] : [];
+    historique.push({ date: now, utilisateur: body.modifiedBy || current.conseiller, action: "Dossier modifié par le conseiller", statut: "Modifié" });
+
+    await db.update(dossiersTable).set({
+      tauxEndettement,
+      capaciteEmprunt,
+      resteAVivre,
+      client,
+      situationPro,
+      finances,
+      demande,
+      documents,
+      historique,
+      status: newStatus,
+      updatedAt: new Date(),
+    }).where(eq(dossiersTable.id, req.params.id));
+
+    await db.insert(auditLogsTable).values({
+      id: generateAuditId(),
+      date: nowDate(),
+      heure: nowTime(),
+      utilisateur: body.modifiedBy || current.conseiller,
+      role: "Conseiller bancaire",
+      dossierRef: current.reference,
+      action: "Modification dossier client",
+      statut: "info",
+      details: `Dossier ${current.reference} modifié`,
+    });
+
+    const updated = await db.select().from(dossiersTable).where(eq(dossiersTable.id, req.params.id));
+    res.json(updated[0]);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Erreur lors de la modification" });
   }
 });
 

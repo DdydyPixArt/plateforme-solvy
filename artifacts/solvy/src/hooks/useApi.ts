@@ -40,7 +40,14 @@ export function useDossiers(params?: { status?: string; conseiller?: string; ana
         const rows = await api.getDossiers(params);
         return rows.map(normalizeDossier);
       } catch {
-        return mockDossiers;
+        let filtered = [...mockDossiers];
+        if (params?.conseiller) {
+          filtered = filtered.filter(d =>
+            d.conseiller === params.conseiller || (d as any).conseillerEmail === params.conseiller
+          );
+        }
+        if (params?.status) filtered = filtered.filter(d => d.status === params.status);
+        return filtered;
       }
     },
     staleTime: 5000,
@@ -82,6 +89,17 @@ export function useCreateDossier() {
   return useMutation({
     mutationFn: (data: Record<string, any>) => api.createDossier(data),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["dossiers"] }),
+  });
+}
+
+export function useUpdateDossier() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, ...data }: { id: string; [key: string]: any }) => api.updateDossier(id, data),
+    onSuccess: (_data, { id }) => {
+      qc.invalidateQueries({ queryKey: ["dossiers"] });
+      qc.invalidateQueries({ queryKey: ["dossier", id] });
+    },
   });
 }
 
@@ -172,5 +190,19 @@ export function useUsers() {
         return [];
       }
     },
+  });
+}
+
+export function useAdminStats() {
+  return useQuery({
+    queryKey: ["admin-stats"],
+    queryFn: async () => {
+      try {
+        return await api.getAdminStats();
+      } catch {
+        return null;
+      }
+    },
+    staleTime: 30000,
   });
 }

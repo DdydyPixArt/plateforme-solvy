@@ -34,6 +34,13 @@ export function createDossier(data: Record<string, any>) {
   });
 }
 
+export function updateDossier(id: string, data: Record<string, any>) {
+  return apiFetch<any>(`/dossiers/${id}`, {
+    method: "PATCH",
+    body: JSON.stringify(data),
+  });
+}
+
 export function transmettreAnalyse(id: string) {
   return apiFetch<{ success: boolean }>(`/dossiers/${id}/transmettre`, { method: "POST" });
 }
@@ -74,6 +81,10 @@ export function getAuditLogs() {
 
 export function getUsers() {
   return apiFetch<any[]>("/users");
+}
+
+export function getAdminStats() {
+  return apiFetch<any>("/admin/stats");
 }
 
 export function normalizeDossier(raw: any): Dossier {

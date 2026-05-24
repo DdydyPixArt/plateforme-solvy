@@ -5,7 +5,7 @@ import { useDossiers } from "@/hooks/useApi";
 import { mockDossiers, DossierStatus } from "@/data/mockData";
 import { Search, Plus, Eye, ArrowUpDown, Filter, FileText, Loader2 } from "lucide-react";
 
-interface Props { role: string; userName: string; userInitials: string; onLogout: () => void; }
+interface Props { role: string; userName: string; userInitials: string; userEmail?: string; onLogout: () => void; }
 
 const txt = "hsl(220 25% 14%)";
 const sub = "hsl(220 12% 48%)";
@@ -26,7 +26,7 @@ const decisionConf = {
 
 type SortKey = "dateCreation" | "demande.montant" | "score";
 
-export default function MesDossiers({ role, userName, userInitials, onLogout }: Props) {
+export default function MesDossiers({ role, userName, userInitials, userEmail, onLogout }: Props) {
   const [, setLocation] = useLocation();
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
@@ -34,7 +34,7 @@ export default function MesDossiers({ role, userName, userInitials, onLogout }: 
   const [sortKey, setSortKey] = useState<SortKey>("dateCreation");
   const [sortAsc, setSortAsc] = useState(false);
 
-  const { data: dossiers = mockDossiers, isLoading } = useDossiers();
+  const { data: dossiers = mockDossiers, isLoading } = useDossiers(role === "conseiller" && userEmail ? { conseiller: userEmail } : undefined);
 
   const fmt = (n: number) => new Intl.NumberFormat("fr-FR", { style: "currency", currency: "EUR", maximumFractionDigits: 0 }).format(n);
 

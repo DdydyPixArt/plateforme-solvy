@@ -4,7 +4,7 @@ import Layout, { PageHeader } from "@/components/Layout";
 import { useDossiers, useUpdateDocuments } from "@/hooks/useApi";
 import { CheckCircle, XCircle, AlertTriangle, Upload, MessageSquare, ArrowLeft, CheckCheck, RotateCcw, Loader2 } from "lucide-react";
 
-interface Props { role: string; userName: string; userInitials: string; onLogout: () => void; }
+interface Props { role: string; userName: string; userInitials: string; userEmail?: string; onLogout: () => void; }
 
 type DocStatut = "fourni" | "manquant" | "a_verifier";
 
@@ -18,9 +18,13 @@ const docLabels: Record<DocStatut, string> = { fourni: "Fourni", manquant: "Manq
 const txt = "hsl(220 25% 14%)";
 const sub = "hsl(220 12% 48%)";
 
-export default function DossiersIncomplets({ role, userName, userInitials, onLogout }: Props) {
+export default function DossiersIncomplets({ role, userName, userInitials, userEmail, onLogout }: Props) {
   const [, setLocation] = useLocation();
-  const { data: allDossiers = [], isLoading } = useDossiers({ status: "incomplet" });
+  const { data: allDossiers = [], isLoading } = useDossiers(
+    role === "conseiller" && userEmail
+      ? { status: "incomplet", conseiller: userEmail }
+      : { status: "incomplet" }
+  );
   const updateDocuments = useUpdateDocuments();
 
   const incomplets = allDossiers;

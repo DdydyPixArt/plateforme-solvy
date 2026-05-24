@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useLocation, useParams } from "wouter";
 import Layout, { PageHeader } from "@/components/Layout";
 import { mockUsers, User, UserRole } from "@/data/mockData";
-import { Plus, CheckCircle, XCircle, Settings, Users, Shield, FileText, X } from "lucide-react";
+import { Plus, CheckCircle, XCircle, Settings, Users, Shield, FileText, X, Database } from "lucide-react";
 
 interface AdminProps { role: string; userName: string; userInitials: string; onLogout: () => void; }
 
@@ -148,7 +148,12 @@ export default function Admin({ role, userName, userInitials, onLogout }: AdminP
 
   return (
     <Layout role={role} userName={userName} userInitials={userInitials} onLogout={onLogout}>
-      <PageHeader title="Administration" subtitle="Gestion des utilisateurs, paramètres et logs système" />
+      <PageHeader title="Administration" subtitle="Gestion des utilisateurs, paramètres et logs système">
+        <button onClick={() => setLocation("/admin/data")}
+          className="flex items-center gap-2 text-sm font-semibold px-4 py-2 rounded-lg border border-purple-200 bg-purple-50 text-purple-700 hover:bg-purple-100 transition-all">
+          <Database className="w-4 h-4" /> Administration Data
+        </button>
+      </PageHeader>
 
       {(showModal || editUser) && (
         <UserModal

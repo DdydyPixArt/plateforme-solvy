@@ -1,0 +1,254 @@
+Ne pas refaire l’application.
+Conserver la version actuelle, le design, l’API, la base de données et les données existantes.
+Faire uniquement les corrections suivantes.
+
+1. Filtrer les dossiers par conseiller connecté
+
+Dans l’espace Conseiller bancaire :
+- le conseiller connecté doit voir uniquement ses propres dossiers
+- ne pas afficher les dossiers de ses collègues
+- appliquer ce filtre dans :
+  - Tableau de bord conseiller
+  - Mes dossiers
+  - Dossiers incomplets
+  - Documents à collecter
+  - Notifications liées aux dossiers
+
+Chaque dossier doit avoir un conseiller assigné / advisorId.
+Les requêtes API côté conseiller doivent filtrer par advisorId.
+
+Côté Analyste risque :
+- les analystes peuvent voir tous les dossiers transmis au service risque
+- ne pas filtrer par conseiller.
+
+Côté Administrateur :
+- l’administrateur peut voir tous les dossiers si nécessaire.
+
+2. Ajouter email et téléphone client
+
+Dans le formulaire “Nouveau dossier”, ajouter :
+- email client
+- téléphone client
+
+Ces champs doivent être sauvegardés en base de données.
+
+Ils doivent apparaître dans :
+- fiche dossier client
+- mes dossiers si possible
+- détails client
+- export éventuel.
+
+3. Ancienneté professionnelle
+
+Actuellement, 11 mois s’affiche comme 0,92 ans.
+Changer l’affichage.
+
+L’utilisateur saisit :
+- années
+- mois
+
+Afficher ensuite sous format lisible :
+- 11 mois
+- 1 an
+- 2 ans et 6 mois
+- 8 ans
+
+Ne jamais afficher 0,92 ans.
+
+Garder en base soit années/mois séparés, soit convertir en mois total, mais afficher proprement côté interface.
+
+4. Pouvoir modifier un dossier
+
+Ajouter un bouton “Modifier le dossier” dans la fiche dossier client côté conseiller.
+
+Le conseiller peut modifier uniquement ses propres dossiers tant qu’ils ne sont pas définitivement décidés.
+
+Champs modifiables :
+- informations client
+- email
+- téléphone
+- adresse
+- situation professionnelle
+- revenus
+- charges
+- type de crédit
+- montant
+- durée
+- objet
+- documents
+
+Après modification :
+- sauvegarder en base
+- recalculer taux d’endettement
+- recalculer score si nécessaire
+- mettre à jour la date de dernière modification
+- ajouter une entrée dans l’audit log.
+
+Si le dossier est déjà Accord / Refus / Accord sous conditions :
+- ne pas permettre la modification
+- afficher lecture seule.
+
+5. Documents à collecter
+
+La page “Documents à collecter” n’a pas été modifiée.
+
+La transformer en vue par dossier.
+
+Afficher une carte ou une ligne par dossier incomplet :
+- référence dossier
+- client
+- conseiller assigné
+- pourcentage de complétude
+- nombre de documents manquants
+- liste courte des documents manquants
+- bouton “Voir dossier”
+- bouton “Téléverser document”
+
+Ne plus afficher une liste globale confuse de documents mélangés.
+
+6. Téléversement PDF
+
+Ajouter la possibilité de téléverser des fichiers PDF dans le dossier client.
+
+Dans la création et la modification du dossier :
+pour chaque document demandé :
+- bouton “Téléverser PDF”
+- afficher le nom du fichier
+- statut fourni / manquant / à vérifier
+- bouton remplacer
+- bouton supprimer
+
+Les documents doivent être liés au dossier en base de données.
+Si le stockage réel de fichier est trop complexe, stocker au minimum :
+- nom fichier
+- type document
+- date téléversement
+- statut document
+- dossier associé
+
+7. Transmission à l’analyste
+
+Vérifier le flux :
+- le bouton “Transmettre à l’analyse risque” doit sauvegarder le statut du dossier en base
+- après transmission, le dossier apparaît côté analyste
+- après transmission, le bouton ne doit plus apparaître côté conseiller
+- le statut devient “Transmis à l’analyse risque”
+
+8. Décision analyste
+
+Conserver la correction déjà faite :
+- quand une décision est validée, elle reste enregistrée
+- le dossier disparaît de “Dossiers à analyser”
+- il apparaît dans l’historique / dossiers analysés
+- le conseiller voit la décision finale
+
+Ne pas casser ce comportement.
+
+9. Important
+
+Ne pas reconstruire l’application.
+Ne pas changer le design global.
+Ne pas supprimer les données existantes.
+Ne pas remplacer l’API actuelle.
+Faire seulement ces corrections ciblées. 10. Ajouter une partie Administrateur Data / Gouvernance des données
+
+Conserver l’administrateur SI actuel, mais ajouter un espace ou un onglet “Administration Data”.
+
+L’objectif est de montrer la partie architecture data du projet.
+
+Ajouter dans la sidebar admin :
+- Administration SI
+- Administration Data
+
+Dans Administration Data, créer les pages suivantes :
+
+A. Schéma de données
+Afficher une vue des principales tables de la base :
+- Utilisateurs
+- Dossiers
+- Clients
+- Documents
+- Scores
+- Décisions
+- Notifications
+- Audit logs
+
+Pour chaque table afficher :
+- nom de la table
+- description
+- nombre d’enregistrements
+- clé primaire
+- relations principales
+
+B. Dictionnaire de données
+Créer un tableau professionnel avec :
+- nom du champ
+- table
+- type de donnée
+- description métier
+- obligatoire oui/non
+- donnée sensible oui/non
+- règle de gestion
+
+Exemples :
+- client_email
+- client_phone
+- income
+- charges
+- debt_ratio
+- solvency_score
+- ficp_status
+- decision_status
+
+C. Classification des données
+Afficher les catégories :
+- Données personnelles
+- Données financières
+- Données bancaires
+- Données de conformité
+- Données techniques
+- Données d’audit
+
+Ajouter niveau de sensibilité :
+- faible
+- interne
+- confidentiel
+- très sensible
+
+D. Gouvernance des données
+Afficher :
+- propriétaire de donnée
+- responsable métier
+- responsable technique
+- durée de conservation
+- règle RGPD
+- qualité de donnée
+- statut de conformité
+
+E. Infrastructure & sécurité cloud
+Créer une page avec cartes et schéma simple :
+- Frontend React
+- API Server
+- PostgreSQL
+- stockage documents PDF
+- authentification
+- logs
+- audit
+- sauvegardes
+- chiffrement
+- contrôle des accès par rôle
+
+F. Qualité des données
+Ajouter indicateurs :
+- dossiers incomplets
+- emails manquants
+- téléphones manquants
+- documents manquants
+- scores non calculés
+- décisions non renseignées
+
+Important :
+Cette partie doit être visible uniquement par l’administrateur.
+Le conseiller et l’analyste ne doivent pas voir l’administration data.
+Ne pas supprimer les pages admin SI existantes.
+Ajouter cette partie en complément.

@@ -3,7 +3,7 @@ import Layout, { PageHeader } from "@/components/Layout";
 import { useNotifications, useMarquerLue, useMarquerToutesLues } from "@/hooks/useApi";
 import { CheckCircle, AlertTriangle, FileText, Bell, Shield, ChevronRight, Check, Loader2 } from "lucide-react";
 
-interface Props { role: string; userName: string; userInitials: string; onLogout: () => void; }
+interface Props { role: string; userName: string; userInitials: string; userEmail?: string; onLogout: () => void; }
 import { useState } from "react";
 
 const txt = "hsl(220 25% 14%)";
@@ -29,12 +29,12 @@ const typeLabels: Record<string, string> = {
   alerte_conformite: "Alerte conformité",
 };
 
-export default function Notifications({ role, userName, userInitials, onLogout }: Props) {
+export default function Notifications({ role, userName, userInitials, userEmail, onLogout }: Props) {
   const [, setLocation] = useLocation();
   const [filter, setFilter] = useState<string>("all");
   const [showLues, setShowLues] = useState(true);
 
-  const { data: notifs = [], isLoading } = useNotifications();
+  const { data: notifs = [], isLoading } = useNotifications(userEmail);
   const marquerLue = useMarquerLue();
   const marquerToutesLues = useMarquerToutesLues();
 

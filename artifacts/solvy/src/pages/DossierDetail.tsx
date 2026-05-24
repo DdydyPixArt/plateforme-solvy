@@ -3,9 +3,27 @@ import { useLocation, useParams } from "wouter";
 import Layout, { PageHeader } from "@/components/Layout";
 import { useDossier, useTransmettreDossier } from "@/hooks/useApi";
 import { mockDossiers, DossierStatus } from "@/data/mockData";
-import { ArrowLeft, TrendingUp, AlertTriangle, CheckCircle, XCircle, Shield, Clock, FileText, User, Gauge, Printer, Send, Loader2 } from "lucide-react";
+import { ArrowLeft, TrendingUp, AlertTriangle, CheckCircle, XCircle, Shield, Clock, FileText, User, Gauge, Printer, Send, Loader2, Edit } from "lucide-react";
 
-interface DossierDetailProps { role: string; userName: string; userInitials: string; onLogout: () => void; }
+interface DossierDetailProps { role: string; userName: string; userInitials: string; userEmail?: string; onLogout: () => void; }
+
+function formatAnciennete(sp: any): string {
+  if (!sp) return "—";
+  let totalMois: number;
+  if (sp.ancienneteMois !== undefined && sp.ancienneteMois >= 0) {
+    totalMois = Math.round(Number(sp.ancienneteMois));
+  } else if (sp.anciennete) {
+    totalMois = Math.round(Number(sp.anciennete) * 12);
+  } else {
+    return "—";
+  }
+  const ans = Math.floor(totalMois / 12);
+  const mois = totalMois % 12;
+  if (ans === 0 && mois === 0) return "0 mois";
+  if (ans === 0) return `${mois} mois`;
+  if (mois === 0) return `${ans} an${ans > 1 ? "s" : ""}`;
+  return `${ans} an${ans > 1 ? "s" : ""} et ${mois} mois`;
+}
 
 const statusConfig: Record<DossierStatus, { label: string; color: string; bg: string; border: string }> = {
   incomplet: { label: "Incomplet", color: "text-orange-700", bg: "bg-orange-50", border: "border-orange-200" },
@@ -31,7 +49,7 @@ const decisionConf = {
 const txt = "hsl(220 25% 14%)";
 const sub = "hsl(220 12% 48%)";
 
-export default function DossierDetail({ role, userName, userInitials, onLogout }: DossierDetailProps) {
+export default function DossierDetail({ role, userName, userInitials, userEmail = "", onLogout }: DossierDetailProps) {
   const [, setLocation] = useLocation();
   const params = useParams<{ id: string }>();
   const { data: dossier, isLoading } = useDossier(params.id);
@@ -132,6 +150,12 @@ export default function DossierDetail({ role, userName, userInitials, onLogout }
             <CheckCircle className="w-3.5 h-3.5" /> Transmis à l'analyse
           </span>
         )}
+        {role === "conseiller" && !dossier.decision && (
+          <button onClick={() => setLocation(`/dossier/${dossier.id}/modifier`)}
+            className="flex items-center gap-2 text-sm font-semibold px-4 py-2 rounded-lg border border-amber-200 bg-amber-50 text-amber-700 hover:bg-amber-100 transition-all">
+            <Edit className="w-4 h-4" /> Modifier
+          </button>
+        )}
         <button onClick={() => setLocation(`/export/${dossier.id}`)}
           className="flex items-center gap-2 text-sm font-semibold px-4 py-2 rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50 transition-all">
           <Printer className="w-4 h-4" /> Export PDF
@@ -185,7 +209,7 @@ export default function DossierDetail({ role, userName, userInitials, onLogout }
               <Row label="Employeur" value={dossier.situationPro?.employeur || "—"} />
               <Row label="Poste" value={dossier.situationPro?.poste || "—"} />
               <Row label="Secteur" value={dossier.situationPro?.secteur || "—"} />
-              <Row label="Ancienneté" value={`${dossier.situationPro?.anciennete ?? "—"} ans`} />
+              <Row label="Ancienneté" value={formatAnciennete(dossier.situationPro)} />
             </InfoCard>
           </div>
 

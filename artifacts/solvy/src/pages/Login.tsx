@@ -3,7 +3,7 @@ import { useLocation } from "wouter";
 import { Building2, Eye, EyeOff, ChevronRight, Lock, Mail, Shield } from "lucide-react";
 
 interface LoginProps {
-  onLogin: (role: string, name: string, initials: string) => void;
+  onLogin: (role: string, name: string, initials: string, email: string) => void;
 }
 
 const profiles = [
@@ -32,7 +32,7 @@ export default function Login({ onLogin }: LoginProps) {
     setLoading(true);
     const profile = profiles.find(p => p.email === email) || profiles[0];
     setTimeout(() => {
-      onLogin(profile.id, profile.name, profile.initials);
+      onLogin(profile.id, profile.name, profile.initials, profile.email);
       setLocation("/dashboard");
     }, 800);
   };

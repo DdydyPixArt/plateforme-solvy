@@ -8,10 +8,12 @@ import Login from "@/pages/Login";
 import Dashboard from "@/pages/Dashboard";
 import NouveauDossier from "@/pages/NouveauDossier";
 import DossierDetail from "@/pages/DossierDetail";
+import EditDossier from "@/pages/EditDossier";
 import Score from "@/pages/Score";
 import Analyste from "@/pages/Analyste";
 import Audit from "@/pages/Audit";
 import Admin from "@/pages/Admin";
+import AdminData from "@/pages/AdminData";
 import DossiersIncomplets from "@/pages/DossiersIncomplets";
 import ExportPDF from "@/pages/ExportPDF";
 import MesDossiers from "@/pages/MesDossiers";
@@ -25,14 +27,19 @@ import NotFound from "@/pages/not-found";
 
 const queryClient = new QueryClient();
 
-interface AuthState { role: string; userName: string; userInitials: string; }
+interface AuthState {
+  role: string;
+  userName: string;
+  userInitials: string;
+  userEmail: string;
+}
 
 function AppRouter() {
   const [auth, setAuth] = useState<AuthState | null>(null);
   const [, setLocation] = useLocation();
 
-  const handleLogin = (role: string, name: string, initials: string) => {
-    setAuth({ role, userName: name, userInitials: initials });
+  const handleLogin = (role: string, name: string, initials: string, email: string) => {
+    setAuth({ role, userName: name, userInitials: initials, userEmail: email });
   };
   const handleLogout = () => { setAuth(null); setLocation("/login"); };
 
@@ -46,7 +53,13 @@ function AppRouter() {
     );
   }
 
-  const p = { role: auth.role, userName: auth.userName, userInitials: auth.userInitials, onLogout: handleLogout };
+  const p = {
+    role: auth.role,
+    userName: auth.userName,
+    userInitials: auth.userInitials,
+    userEmail: auth.userEmail,
+    onLogout: handleLogout,
+  };
 
   return (
     <Switch>
@@ -64,6 +77,7 @@ function AppRouter() {
 
       {/* Shared */}
       <Route path="/dossier/:id" component={() => <DossierDetail {...p} />} />
+      <Route path="/dossier/:id/modifier" component={() => <EditDossier {...p} />} />
       <Route path="/score/:id" component={() => <Score {...p} />} />
       <Route path="/export/:id" component={() => <ExportPDF {...p} />} />
       <Route path="/audit" component={() => <Audit {...p} />} />
@@ -75,12 +89,16 @@ function AppRouter() {
       <Route path="/decisions" component={() => <Decisions {...p} />} />
       <Route path="/historique-analyse" component={() => <HistoriqueAnalyse {...p} />} />
 
-      {/* Admin — URL-based tab routing */}
+      {/* Admin SI */}
       <Route path="/admin" component={() => <Admin {...p} />} />
       <Route path="/admin/utilisateurs" component={() => <Admin {...p} />} />
       <Route path="/admin/roles" component={() => <Roles {...p} />} />
       <Route path="/admin/scoring" component={() => <Admin {...p} />} />
       <Route path="/admin/logs" component={() => <Admin {...p} />} />
+
+      {/* Admin Data */}
+      <Route path="/admin/data" component={() => <AdminData {...p} />} />
+      <Route path="/admin/data/:tab" component={() => <AdminData {...p} />} />
 
       <Route component={NotFound} />
     </Switch>
